@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, AlertTriangle, Settings, ShieldCheck, Activity } from 'lucide-react';
+import { Brain, AlertTriangle, Settings, ShieldCheck, Activity, Share2 } from 'lucide-react';
+import ShareCard from './ShareCard';
 
 interface AgentEngineProps {
   problem: string;
@@ -19,6 +20,7 @@ interface DebateTurn {
 export default function AgentEngine({ problem, initialSolution }: AgentEngineProps) {
   const [step, setStep] = useState(0);
   const [showVerdict, setShowVerdict] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   // Simulation timeline
   useEffect(() => {
@@ -220,8 +222,12 @@ export default function AgentEngine({ problem, initialSolution }: AgentEnginePro
                   </p>
                   
                   <div className="pt-4 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
-                    <button className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-all scale-100 hover:scale-[1.02] active:scale-95 shadow-xl">
-                      Export Execution Blueprint
+                    <button 
+                      onClick={() => setIsShareModalOpen(true)}
+                      className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-all scale-100 hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center space-x-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      <span>Share Decision Snapshot</span>
                     </button>
                     <button className="px-8 py-3 bg-neutral-900 border border-white/10 text-white font-medium rounded-xl hover:bg-neutral-800 transition-all shadow-xl">
                       View Audit Log
@@ -251,6 +257,14 @@ export default function AgentEngine({ problem, initialSolution }: AgentEnginePro
           </div>
         </div>
       )}
+      {/* Share Modal */}
+      <ShareCard 
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        problem={problem}
+        recommendation="Initiate 'Thin-Layer' Pivot with 14-day validation Sprint."
+        confidence={87}
+      />
     </div>
   );
 }
