@@ -17,7 +17,7 @@ export default function Home() {
   const [problem, setProblem] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showBoard, setShowBoard] = useState(false);
   const [isBoardLoading, setIsBoardLoading] = useState(false);
@@ -60,7 +60,7 @@ export default function Home() {
         throw new Error(data.error || 'Failed to generate solution');
       }
 
-      setResult(data.result);
+      setResult(data.result as Record<string, unknown>);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
       setError(message);
