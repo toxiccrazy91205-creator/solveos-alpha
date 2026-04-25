@@ -32,8 +32,10 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const handleSolve = async () => {
-    if (problem.trim().length < 10) {
+  const handleSolve = async (overrideProblem?: string, autoBoard: boolean = false) => {
+    const currentProblem = overrideProblem || problem;
+    
+    if (currentProblem.trim().length < 10) {
       setError('Please provide a bit more detail (at least 10 characters).');
       return;
     }
@@ -49,7 +51,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ problem }),
+        body: JSON.stringify({ problem: currentProblem }),
       });
 
       const data = await response.json();
@@ -59,6 +61,9 @@ export default function Home() {
       }
 
       setResult(data.result as Record<string, unknown>);
+      if (autoBoard) {
+        setShowBoard(true);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
       setError(message);
@@ -133,20 +138,30 @@ export default function Home() {
               className="w-full h-32 sm:h-48 bg-transparent text-lg sm:text-xl lg:text-3xl text-white placeholder-neutral-600 focus:outline-none resize-none font-light leading-relaxed px-1"
             />
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {[
-                "Should I leave my job and start an AI startup?",
-                "Should I move abroad for a better opportunity?",
-                "Should I invest my savings into a business?"
-              ].map((sample, i) => (
-                <button
-                  key={i}
-                  onClick={() => setProblem(sample)}
-                  className="text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-400 hover:text-white px-4 py-2 rounded-full transition-colors font-medium text-left"
-                >
-                  {sample}
-                </button>
-              ))}
+            <div className="mt-6 flex flex-col space-y-3">
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest px-1">
+                Quick Scenarios (Full Simulation)
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { text: "Quit job & start AI startup?", icon: "🚀" },
+                  { text: "Move abroad for opportunity?", icon: "🌍" },
+                  { text: "Invest savings into business?", icon: "💰" }
+                ].map((sample, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setProblem(sample.text);
+                      handleSolve(sample.text, true);
+                    }}
+                    className="flex items-center space-x-2 text-xs bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-400 hover:text-white px-5 py-3 rounded-2xl transition-all duration-300 font-medium text-left hover:scale-[1.02] hover:border-purple-500/30 group/btn"
+                  >
+                    <span>{sample.icon}</span>
+                    <span>{sample.text}</span>
+                    <Sparkles className="w-3 h-3 text-purple-400 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="mt-8 flex flex-col sm:flex-row justify-between items-center sm:items-end space-y-6 sm:space-y-0 pt-6 border-t border-white/5">
