@@ -32,8 +32,8 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const handleSolve = async (overrideProblem?: string, autoBoard: boolean = false) => {
-    const currentProblem = overrideProblem || problem;
+  const handleSolve = async (overrideProblem?: unknown, autoBoard: boolean = false) => {
+    const currentProblem = typeof overrideProblem === 'string' ? overrideProblem : problem;
     
     if (currentProblem.trim().length < 10) {
       setError('Please provide a bit more detail (at least 10 characters).');
