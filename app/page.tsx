@@ -105,16 +105,25 @@ export default function Home() {
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-7xl sm:text-8xl lg:text-9xl font-medium tracking-tighter text-white brand-wordmark mb-2"
+            className="text-7xl sm:text-8xl lg:text-9xl font-medium tracking-tighter text-white brand-wordmark mb-1"
           >
-            Solve<span className="system-core-glyph animate-breathing mx-1">O</span>S
+            SOLVE<span className="system-core-glyph animate-breathing mx-2 text-purple-500">◉</span>OS
           </motion.h1>
           
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-lg sm:text-xl text-neutral-400 font-light tracking-[0.15em] uppercase"
+            className="text-lg sm:text-xl text-neutral-400 font-bold tracking-[0.1em] uppercase mb-1"
+          >
+            {t.tagline}
+          </motion.p>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-sm sm:text-base text-neutral-600 font-medium tracking-tight italic"
           >
             {t.simulate_outcomes}
           </motion.p>
