@@ -141,104 +141,92 @@ export default function AgentEngine({ problem, initialSolution }: AgentEnginePro
       {/* Header: War Room Metrics */}
       <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/10 pb-8 relative z-20">
         <div className="space-y-1 mb-6 md:mb-0">
-          <div className="flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            <h2 className="text-4xl font-black tracking-tighter text-white">{lt.war_room_title || 'Decision War Room'}</h2>
+      {/* Header with Terminal Metrics */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 space-y-6 md:space-y-0 px-2">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-3">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+            <h2 className="text-3xl font-black tracking-tighter text-white uppercase italic">{lt.war_room_title || 'War Room'}</h2>
           </div>
-          <p className="text-neutral-500 font-medium uppercase tracking-widest text-xs">{lt.dialectic_subtitle || 'Simulated Multi-Agent Dialectic'}</p>
+          <p className="text-neutral-600 font-bold uppercase tracking-[0.3em] text-[10px]">{lt.dialectic_subtitle || 'Simulated Multi-Agent Dialectic'}</p>
         </div>
 
-        <div className="flex items-center space-x-8">
+        <div className="flex items-center space-x-10">
           {/* Confidence Score */}
           <div className="flex flex-col items-center">
-            <span className="text-[10px] text-neutral-500 uppercase tracking-widest mb-2">{lt.confidence}</span>
-            <div className="relative flex items-center justify-center">
-              <svg className="w-16 h-16 transform -rotate-90">
-                <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-neutral-800" />
-                <motion.circle 
-                  cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" fill="transparent" 
-                  strokeDasharray={176}
-                  initial={{ strokeDashoffset: 176 }}
-                  animate={{ strokeDashoffset: 176 - (176 * (showVerdict ? 87 : (step + 1) * 20)) / 100 }}
-                  className="text-purple-500"
-                />
-              </svg>
-              <span className="absolute text-sm font-bold text-white">{showVerdict ? 87 : (step + 1) * 20}%</span>
+            <span className="text-[9px] text-neutral-600 uppercase tracking-widest mb-2 font-black">{lt.confidence}</span>
+            <div className="text-3xl font-black text-white tracking-tighter">
+              {showVerdict ? 87 : (step + 1) * 20}%
             </div>
           </div>
 
-          {/* Risk Meter */}
+          {/* Risk Meter (Bloomberg Style) */}
           <div className="flex flex-col items-end">
-            <span className="text-[10px] text-neutral-500 uppercase tracking-widest mb-2">{lt.risk_factor}</span>
+            <span className="text-[9px] text-neutral-600 uppercase tracking-widest mb-2 font-black">{lt.risk_factor}</span>
             <div className="flex items-center space-x-1">
-              {[1, 2, 3, 4, 5].map((idx) => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((idx) => (
                 <motion.div 
                   key={idx}
-                  initial={{ opacity: 0.3 }}
+                  initial={{ opacity: 0.1 }}
                   animate={{ 
-                    opacity: idx <= (step === 1 ? 4 : step === 2 ? 3 : 2) ? 1 : 0.3,
-                    backgroundColor: idx <= 2 ? '#10b981' : idx <= 3 ? '#f59e0b' : '#ef4444'
+                    opacity: idx <= (step === 1 ? 7 : step === 2 ? 5 : 3) ? 1 : 0.1,
+                    backgroundColor: idx <= 3 ? '#10b981' : idx <= 5 ? '#f59e0b' : '#ef4444'
                   }}
-                  className="w-4 h-8 rounded-sm"
+                  className="w-1.5 h-6 rounded-full"
                 />
               ))}
             </div>
-            <span className="text-[10px] font-bold mt-1 text-neutral-400 capitalize">
+            <span className="text-[9px] font-black mt-1 text-neutral-500 uppercase tracking-widest">
               {step === 1 ? lt.risk_critical : step === 2 ? lt.risk_calculated : lt.risk_optimized}
             </span>
           </div>
 
           {showVerdict && (
             <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-emerald-500/10 border border-emerald-500/30 px-4 py-2 rounded-xl flex items-center space-x-2"
+              initial={{ opacity: 0, scale: 0.9 }} 
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full flex items-center space-x-2"
             >
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-tight">{lt.recommended_decision}</span>
+              <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">{lt.recommended_decision}</span>
             </motion.div>
           )}
         </div>
       </div>
 
-      {/* The Debate Timeline */}
-      <div className="grid grid-cols-1 gap-4 relative z-10">
+      {/* The Debate: Apple Notes Structured List */}
+      <div className="space-y-4 relative z-10">
         <AnimatePresence>
           {debateTurns.map((turn, idx) => (
             idx <= step && (
               <motion.div
                 key={idx}
-                initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className={`relative group bg-neutral-900/40 backdrop-blur-xl border ${idx === step && !showVerdict ? 'border-purple-500/40' : 'border-white/5'} rounded-2xl p-6 hover:bg-neutral-900/60 transition-all shadow-xl`}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+                className={`relative glass-note rounded-3xl p-8 transition-all ${idx === step && !showVerdict ? 'border-purple-500/30 ring-1 ring-purple-500/20' : 'border-white/5'}`}
               >
-                {/* Connection line for timeline feel */}
-                {idx < step && (
-                  <div className="absolute -bottom-4 left-10 w-[1px] h-4 bg-white/10" />
-                )}
-
-                <div className="flex items-start space-x-4">
-                  <div className={`p-2.5 rounded-xl ${colorMap[turn.color].bg} border ${colorMap[turn.color].border} shadow-inner shrink-0`}>
+                <div className="flex items-start space-x-6">
+                  <div className={`p-3 rounded-2xl ${colorMap[turn.color].bg} border ${colorMap[turn.color].border} shrink-0`}>
                     {turn.icon}
                   </div>
                   
-                  <div className="flex-grow">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-sm font-bold text-white tracking-tight">{turn.agent}</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full ${colorMap[turn.color].bg} ${colorMap[turn.color].text} border ${colorMap[turn.color].border}`}>
+                  <div className="flex-grow space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <span className="text-xs font-black text-white uppercase tracking-widest">{turn.agent}</span>
+                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full ${colorMap[turn.color].bg} ${colorMap[turn.color].text} border ${colorMap[turn.color].border}`}>
                           {turn.role}
                         </span>
                       </div>
                       {idx === step && !showVerdict && (
                         <div className="flex items-center space-x-2">
-                           <Activity className="w-3 h-3 text-purple-400 animate-pulse" />
-                           <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">{lt.processing}</span>
+                           <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping" />
+                           <span className="text-[9px] text-purple-400 font-black uppercase tracking-widest">{lt.processing}</span>
                         </div>
                       )}
                     </div>
-                    <p className="text-neutral-300 text-sm leading-relaxed antialiased font-light max-w-3xl">
+                    <p className="text-neutral-300 text-base leading-relaxed font-medium antialiased">
                       {turn.content}
                     </p>
                   </div>
@@ -249,45 +237,43 @@ export default function AgentEngine({ problem, initialSolution }: AgentEnginePro
         </AnimatePresence>
       </div>
 
-      {/* Final Verdict / Consensus */}
+      {/* Final Verdict: The Note Conclusion */}
       {showVerdict && (
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-20 pt-8"
+          className="relative z-20 pt-12"
         >
-          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-purple-500/20 to-blue-500/20 rounded-3xl blur-xl opacity-50" />
-          <div className="bg-neutral-950/90 backdrop-blur-3xl border border-white/10 rounded-3xl p-8 md:p-10 relative overflow-hidden shadow-2xl">
-             <div className="absolute top-0 w-full h-[1px] left-0 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-40" />
+          <div className="glass-note rounded-[40px] p-10 relative overflow-hidden border-emerald-500/20 shadow-[0_40px_120px_rgba(0,0,0,0.6)]">
+             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
              
-             <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-blue-500/20 border border-emerald-500/30 flex items-center justify-center shadow-inner relative group">
-                  <div className="absolute inset-0 bg-emerald-500/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <ShieldCheck className="w-10 h-10 text-emerald-400 relative z-10" />
+             <div className="flex flex-col md:flex-row items-center md:items-start space-y-8 md:space-y-0 md:space-x-10">
+                <div className="w-24 h-24 rounded-3xl bg-emerald-500/5 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-12 h-12 text-emerald-400" />
                 </div>
 
-                <div className="flex-grow space-y-4 text-center md:text-left">
+                <div className="flex-grow space-y-6 text-center md:text-left">
                   <div>
-                    <h3 className="text-3xl font-black text-white tracking-tighter mb-1 uppercase italic">{lt.verdict_title}</h3>
+                    <h3 className="text-4xl font-black text-white tracking-tighter mb-2 uppercase italic">{lt.verdict_title}</h3>
                     <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Validated Path</span>
-                      <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Iterative Risk-Cap</span>
+                      <span className="bg-white/[0.03] text-neutral-400 border border-white/10 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Validated Path</span>
+                      <span className="bg-white/[0.03] text-neutral-400 border border-white/10 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Iterative Risk-Cap</span>
                     </div>
                   </div>
 
-                  <p className="text-neutral-200 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto md:mx-0">
+                  <p className="text-neutral-200 text-xl font-light leading-relaxed max-w-2xl mx-auto md:mx-0">
                     {lt.verdict_content}
                   </p>
                   
-                  <div className="pt-4 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
+                  <div className="pt-6 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
                     <button 
                       onClick={() => setIsShareModalOpen(true)}
-                      className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:bg-neutral-200 transition-all scale-100 hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)] flex items-center space-x-2"
+                      className="px-10 py-4 bg-white text-black font-black rounded-full hover:bg-neutral-200 transition-all scale-100 hover:scale-[1.02] active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)] flex items-center space-x-3"
                     >
                       <Share2 className="w-4 h-4" />
-                      <span>{lt.share_snapshot}</span>
+                      <span className="text-sm uppercase tracking-widest">{lt.share_snapshot}</span>
                     </button>
-                    <button className="px-8 py-3 bg-neutral-900 border border-white/10 text-white font-medium rounded-xl hover:bg-neutral-800 transition-all shadow-xl">
+                    <button className="px-10 py-4 bg-transparent border border-white/10 text-neutral-400 font-bold rounded-full hover:bg-white/[0.03] transition-all text-sm uppercase tracking-widest">
                       {lt.audit_log}
                     </button>
                   </div>
@@ -297,14 +283,22 @@ export default function AgentEngine({ problem, initialSolution }: AgentEnginePro
         </motion.div>
       )}
 
-      {/* Progress Footer */}
+      {/* Progress Footer: Minimal Note Progress */}
       {!showVerdict && (
-        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-full max-w-md px-6 z-50">
-          <div className="bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{lt.intensity}</span>
-              <span className="text-[10px] text-purple-400 font-bold uppercase tracking-widest">{lt.phase} {step + 1} / 4</span>
+        <div className="fixed bottom-12 left-1/2 -translate-x-1/2 w-full max-w-sm px-6 z-50">
+          <div className="glass-note rounded-full px-6 py-3 border-white/10 shadow-2xl flex items-center justify-between">
+            <span className="text-[9px] text-neutral-500 font-black uppercase tracking-widest">{lt.phase} {step + 1} / 4</span>
+            <div className="flex-grow mx-6 h-[2px] bg-white/5 rounded-full overflow-hidden">
+               <motion.div 
+                 className="h-full bg-white"
+                 initial={{ width: '0%' }}
+                 animate={{ width: `${(step + 1) * 25}%` }}
+               />
             </div>
+            <Activity className="w-3 h-3 text-white animate-pulse" />
+          </div>
+        </div>
+      )}
             <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                <motion.div 
                   initial={{ width: 0 }}

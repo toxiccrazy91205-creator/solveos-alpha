@@ -37,8 +37,8 @@ export default function DecisionBlueprint({ data, debugMode }: DecisionBlueprint
   };
 
   const item = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } }
   };
 
   return (
@@ -47,86 +47,99 @@ export default function DecisionBlueprint({ data, debugMode }: DecisionBlueprint
       initial="hidden"
       animate="show"
       dir={data?.language === 'Arabic' ? 'rtl' : 'ltr'}
-      className={`w-full max-w-5xl mt-12 md:mt-16 space-y-6 md:space-y-8 relative font-sans ${data?.language === 'Arabic' ? 'text-right' : 'text-left'}`}
+      className={`w-full max-w-5xl mt-16 space-y-6 md:space-y-10 relative font-sans ${data?.language === 'Arabic' ? 'text-right' : 'text-left'}`}
     >
-      <div className="absolute top-0 w-full h-full bg-gradient-to-b from-blue-500/5 via-purple-500/5 to-transparent blur-3xl pointer-events-none rounded-[100px]" />
-
-      {/* Card 6: Decision Confidence Score (Top right badge style) */}
-      <motion.div variants={item} className="flex justify-between items-end border-b border-white/10 pb-6 mb-8">
-        <div>
-          <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-400 tracking-tight">
+      {/* Header Summary */}
+      <motion.div variants={item} className="flex justify-between items-center border-b border-white/[0.03] pb-8 mb-4">
+        <div className="space-y-1">
+          <h2 className="text-4xl font-black tracking-tighter text-white">
             {t.decision_blueprint}
           </h2>
-          <div className="flex items-center mt-1">
-            <p className="text-neutral-500">{t.synthesized_strategic_breakdown || 'Synthesized strategic breakdown'}</p>
+          <div className="flex items-center space-x-3">
+            <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">{t.synthesized_strategic_breakdown || 'Synthesized strategic breakdown'}</span>
             {data?.isDemo && (
-              <span className="ml-3 px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-[10px] uppercase tracking-tighter text-amber-500 font-bold animate-pulse">
+              <span className="px-2 py-0.5 bg-white/[0.03] border border-white/10 rounded-full text-[9px] uppercase tracking-tighter text-neutral-400 font-bold">
                 {t.demo_mode}
               </span>
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end">
-           <span className="text-xs text-neutral-500 uppercase tracking-widest mb-1 font-medium">{t.confidence_score}</span>
-           <div className="flex items-center space-x-2 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 px-4 py-2 rounded-2xl shadow-[0_0_30px_rgba(16,185,129,0.15)]">
-             <span className="text-3xl font-semibold text-emerald-400">{data?.score || 0}</span>
-             <span className="text-lg text-emerald-500/50">/100</span>
+        <div className="flex items-center space-x-6">
+           <div className="flex flex-col items-end">
+             <span className="text-[9px] text-neutral-600 uppercase tracking-widest mb-1 font-bold">{t.confidence_score}</span>
+             <span className="text-4xl font-black text-white tracking-tighter">{data?.score || 0}<span className="text-lg text-neutral-700 ml-0.5">/100</span></span>
            </div>
         </div>
       </motion.div>
 
-      {/* Card 1: Diagnosis */}
-      <motion.div variants={item} className="bg-neutral-900/40 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-8 relative overflow-hidden group hover:bg-neutral-900/60 transition-colors">
-        <h3 className="text-xl font-medium text-white mb-6 flex items-center"><Anchor className="w-5 h-5 mr-3 text-blue-400" /> {t.diagnosis}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          <div>
-             <h4 className="text-xs uppercase text-neutral-500 tracking-wider mb-2 font-medium">{t.core_problem}</h4>
-             <p className="text-neutral-300 text-sm leading-relaxed">{data?.diagnosis?.coreProblem || '...'}</p>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* Diagnosis: Left Column (High Density) */}
+        <motion.div variants={item} className="md:col-span-4 space-y-8 glass-note p-8 rounded-[32px]">
+          <h3 className="text-xs font-black text-white uppercase tracking-[0.3em] mb-8 border-l-2 border-white pl-3">{t.diagnosis}</h3>
+          
+          <div className="space-y-8">
+            <div className="group">
+               <h4 className="text-[10px] uppercase text-neutral-600 tracking-wider mb-2 font-black">{t.core_problem}</h4>
+               <p className="text-neutral-300 text-sm leading-relaxed font-medium">{data?.diagnosis?.coreProblem || '...'}</p>
+            </div>
+            <div className="group">
+               <h4 className="text-[10px] uppercase text-neutral-600 tracking-wider mb-2 font-black">{t.blind_spots}</h4>
+               <p className="text-neutral-300 text-sm leading-relaxed font-medium">{data?.diagnosis?.blindSpots || '...'}</p>
+            </div>
+            <div className="group">
+               <h4 className="text-[10px] uppercase text-neutral-600 tracking-wider mb-2 font-black">{t.key_risks}</h4>
+               <p className="text-neutral-300 text-sm leading-relaxed font-medium">{data?.diagnosis?.keyRisks || '...'}</p>
+            </div>
           </div>
-          <div>
-             <h4 className="text-xs uppercase text-neutral-500 tracking-wider mb-2 font-medium">{t.blind_spots}</h4>
-             <p className="text-neutral-300 text-sm leading-relaxed">{data?.diagnosis?.blindSpots || '...'}</p>
-          </div>
-          <div>
-             <h4 className="text-xs uppercase text-neutral-500 tracking-wider mb-2 font-medium">{t.key_risks}</h4>
-             <p className="text-neutral-300 text-sm leading-relaxed">{data?.diagnosis?.keyRisks || '...'}</p>
-          </div>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Card 2: Decision Paths */}
-      <motion.div variants={item}>
-        <h3 className="text-xl font-medium text-white mb-6 flex items-center ml-2"><Shuffle className="w-5 h-5 mr-3 text-purple-400" /> {t.decision_paths}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="bg-neutral-900/30 backdrop-blur-md border border-emerald-500/10 rounded-3xl p-6 hover:border-emerald-500/30 transition-colors shadow-lg">
-             <div className="flex items-center space-x-2 mb-4"><Shield className="w-5 h-5 text-emerald-400" /><h4 className="text-white font-medium">{t.safe_path}</h4></div>
-             <p className="text-neutral-400 text-sm mb-4">{data?.paths?.safe?.description || '...'}</p>
-             <ul className="text-xs text-neutral-500 space-y-2">
-               {data?.paths?.safe?.pros?.map((p: string, i: number) => <li key={i}>+ {p}</li>)}
-               {data?.paths?.safe?.cons?.map((p: string, i: number) => <li key={i}>- {p}</li>)}
-             </ul>
-           </div>
-           
-           <div className="bg-gradient-to-br from-neutral-900/50 to-neutral-800/50 backdrop-blur-md border border-purple-500/20 rounded-3xl p-6 hover:border-purple-500/40 transition-colors shadow-[0_0_40px_rgba(168,85,247,0.05)] relative overflow-hidden">
-             <div className="absolute top-0 w-full h-[1px] left-0 bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50" />
-             <div className="flex items-center space-x-2 mb-4"><Zap className="w-5 h-5 text-purple-400" /><h4 className="text-white font-medium">{t.balanced_path}</h4></div>
-             <p className="text-neutral-300 text-sm mb-4 line-clamp-3">{data?.paths?.balanced?.description || '...'}</p>
-             <ul className="text-xs text-purple-200/50 space-y-2">
-               {data?.paths?.balanced?.pros?.map((p: string, i: number) => <li key={i} className="text-purple-300/80">+ {p}</li>)}
-               {data?.paths?.balanced?.cons?.map((p: string, i: number) => <li key={i}>- {p}</li>)}
-             </ul>
-           </div>
-           
-           <div className="bg-neutral-900/30 backdrop-blur-md border border-rose-500/10 rounded-3xl p-6 hover:border-rose-500/30 transition-colors shadow-lg">
-             <div className="flex items-center space-x-2 mb-4"><AlertOctagon className="w-5 h-5 text-rose-500" /><h4 className="text-white font-medium">{t.bold_path}</h4></div>
-             <p className="text-neutral-400 text-sm mb-4">{data?.paths?.bold?.description || '...'}</p>
-             <ul className="text-xs text-neutral-500 space-y-2">
-               {data?.paths?.bold?.pros?.map((p: string, i: number) => <li key={i}>+ {p}</li>)}
-               {data?.paths?.bold?.cons?.map((p: string, i: number) => <li key={i}>- {p}</li>)}
-             </ul>
-           </div>
+        {/* Paths: Right Column (Apple Notes clarity) */}
+        <div className="md:col-span-8 space-y-6">
+          <motion.div variants={item} className="glass-note p-8 rounded-[32px] border-emerald-500/10 hover:border-emerald-500/20 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-black text-emerald-400 uppercase tracking-widest">{t.safe_path}</h4>
+              <Shield className="w-4 h-4 text-emerald-400/40" />
+            </div>
+            <p className="text-neutral-300 text-lg font-light leading-relaxed mb-6">{data?.paths?.safe?.description || '...'}</p>
+            <div className="flex flex-wrap gap-4">
+               {data?.paths?.safe?.pros?.map((p: string, i: number) => <span key={i} className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider bg-white/[0.03] px-3 py-1 rounded-full">+ {p}</span>)}
+            </div>
+          </motion.div>
+
+          <motion.div variants={item} className="glass-note p-8 rounded-[32px] border-purple-500/20 bg-gradient-to-br from-white/[0.02] to-transparent shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10"><Zap className="w-12 h-12 text-purple-400" /></div>
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-black text-purple-400 uppercase tracking-widest">{t.balanced_path}</h4>
+            </div>
+            <p className="text-neutral-100 text-xl font-medium leading-tight mb-8">{data?.paths?.balanced?.description || '...'}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div className="space-y-2">
+                 <span className="text-[9px] text-purple-400/60 uppercase font-black tracking-widest">Efficiency Gains</span>
+                 <ul className="text-xs text-neutral-400 space-y-1.5">
+                   {data?.paths?.balanced?.pros?.map((p: string, i: number) => <li key={i} className="flex items-center"><span className="w-1 h-1 bg-purple-500 rounded-full mr-2" /> {p}</li>)}
+                 </ul>
+               </div>
+               <div className="space-y-2">
+                 <span className="text-[9px] text-rose-400/60 uppercase font-black tracking-widest">Trade-offs</span>
+                 <ul className="text-xs text-neutral-400 space-y-1.5">
+                   {data?.paths?.balanced?.cons?.map((p: string, i: number) => <li key={i} className="flex items-center opacity-60"><span className="w-1 h-1 bg-neutral-600 rounded-full mr-2" /> {p}</li>)}
+                 </ul>
+               </div>
+            </div>
+          </motion.div>
+
+          <motion.div variants={item} className="glass-note p-8 rounded-[32px] border-rose-500/10 hover:border-rose-500/20 transition-colors">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-black text-rose-400 uppercase tracking-widest">{t.bold_path}</h4>
+              <AlertOctagon className="w-4 h-4 text-rose-400/40" />
+            </div>
+            <p className="text-neutral-400 text-lg font-light leading-relaxed mb-6">{data?.paths?.bold?.description || '...'}</p>
+            <div className="flex flex-wrap gap-4">
+               {data?.paths?.bold?.pros?.map((p: string, i: number) => <span key={i} className="text-[10px] text-neutral-600 font-bold uppercase tracking-wider bg-white/[0.03] px-3 py-1 rounded-full">+ {p}</span>)}
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Card 4: Recommendation (Highlighted) */}
       <motion.div variants={item} className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 backdrop-blur-xl border border-blue-500/30 rounded-3xl p-5 md:p-8 relative overflow-hidden shadow-[0_0_60px_rgba(59,130,246,0.15)]">
