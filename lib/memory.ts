@@ -20,7 +20,7 @@ export async function saveDecision(entry: Omit<DecisionMemoryEntry, 'id' | 'time
   try {
     const data = await fs.readFile(MEMORY_FILE, 'utf-8');
     history = JSON.parse(data);
-  } catch (error) {
+  } catch {
     // File doesn't exist yet or is invalid
   }
 

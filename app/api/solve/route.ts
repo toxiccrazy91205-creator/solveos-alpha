@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const blueprint = await solveDecision(body.problem.trim(), body.language);
 
     // Save to memory foundation
-    const entry = await saveDecision({
+    await saveDecision({
       problem: body.problem.trim(),
       blueprint
     });

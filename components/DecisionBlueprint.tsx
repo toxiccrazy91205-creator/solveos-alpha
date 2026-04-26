@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Shuffle, Zap, CheckCircle, TrendingUp, AlertOctagon, Anchor, Flame } from 'lucide-react';
+import { Shield, Zap, CheckCircle, TrendingUp, AlertOctagon, Flame } from 'lucide-react';
 
 // Import locales
 import en from '../locales/en/common.json';
@@ -10,7 +10,7 @@ import de from '../locales/de/common.json';
 import es from '../locales/es/common.json';
 import zh from '../locales/zh/common.json';
 
-const locales: Record<string, any> = { 
+const locales: Record<string, Record<string, string>> = { 
   English: en, 
   Russian: ru, 
   Arabic: ar, 
@@ -19,12 +19,14 @@ const locales: Record<string, any> = {
   Chinese: zh 
 };
 
+import type { DecisionBlueprint } from '../lib/types';
+
 interface DecisionBlueprintProps {
-  data: Record<string, any>;
+  data: DecisionBlueprint;
   debugMode?: boolean;
 }
 
-export default function DecisionBlueprint({ data, debugMode }: DecisionBlueprintProps) {
+export default function DecisionBlueprint({ data }: DecisionBlueprintProps) {
   // Select the appropriate locale based on the detected language, default to English
   const t = locales[data?.language as string] || locales.English;
   

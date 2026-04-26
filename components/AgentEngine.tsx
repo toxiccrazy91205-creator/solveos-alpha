@@ -8,7 +8,36 @@ interface AgentEngineProps {
   initialSolution: Record<string, unknown>;
 }
 
-const DIALECTIC_LOCALES: Record<string, any> = {
+interface DialecticLocale {
+  strategist: string;
+  skeptic: string;
+  operator: string;
+  role_initial: string;
+  role_attack: string;
+  role_revision: string;
+  role_execution: string;
+  proposal_content: (rec: string) => string;
+  attack_content: string;
+  revision_content: string;
+  execution_content: string;
+  verdict_title: string;
+  verdict_content: string;
+  recommended_decision: string;
+  share_snapshot: string;
+  audit_log: string;
+  processing: string;
+  confidence: string;
+  risk_factor: string;
+  intensity: string;
+  phase: string;
+  risk_critical: string;
+  risk_calculated: string;
+  risk_optimized: string;
+  war_room_title?: string;
+  dialectic_subtitle?: string;
+}
+
+const DIALECTIC_LOCALES: Record<string, DialecticLocale> = {
   English: {
     strategist: "Strategist",
     skeptic: "Skeptic",

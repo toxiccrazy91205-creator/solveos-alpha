@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe } from 'lucide-react';
 
 interface LanguageSelectorProps {
   currentLanguage: string;

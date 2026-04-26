@@ -1,6 +1,6 @@
 import { DecisionBlueprint } from './types';
 
-export const MOCK_RESPONSES: Record<string, Record<string, any>> = {
+export const MOCK_RESPONSES: Record<string, Record<string, DecisionBlueprint>> = {
   English: {
     default: {
       score: 78,
@@ -267,7 +267,7 @@ export const MOCK_RESPONSES: Record<string, Record<string, any>> = {
   }
 };
 
-export function getMockBlueprint(problem: string, language: string = 'English'): any {
+export function getMockBlueprint(problem: string, language: string = 'English'): DecisionBlueprint {
   // Ensure we use a supported language for the mock, fallback to English
   const langKey = MOCK_RESPONSES[language] ? language : 'English';
   const dataset = MOCK_RESPONSES[langKey];

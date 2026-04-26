@@ -134,7 +134,7 @@ export async function solveDecision(problem: string, overrideLanguage?: string):
     }, {
       // If we have an override, we could technically skip the 'detect' node
       // but for simplicity and robustness we'll just let it run or force the state
-    }) as any;
+    }) as unknown as AgentState;
 
     // Force the override language if it was explicitly selected by user
     if (overrideLanguage && overrideLanguage !== 'auto' && result.finalBlueprint) {
@@ -146,11 +146,12 @@ export async function solveDecision(problem: string, overrideLanguage?: string):
     }
     
     return result.finalBlueprint;
-  } catch (error: any) {
-    console.error('Real Engine failed, falling back to Demo Mode:', error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Real Engine failed, falling back to Demo Mode:', errorMessage);
     
     // Check if it's a quota/API error to provide a specific log
-    if (error.message?.includes('429') || error.message?.includes('quota')) {
+    if (errorMessage.includes('429') || errorMessage.includes('quota')) {
       console.warn('OPENAI QUOTA EXCEEDED: Engaging Demo Simulation Mode.');
     }
     

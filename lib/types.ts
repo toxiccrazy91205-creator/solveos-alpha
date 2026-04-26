@@ -1,3 +1,4 @@
+export const TYPES_STABLE = true;
 export interface SolveRequest {
   problem: string;
   language?: string;
@@ -41,7 +42,7 @@ export interface DecisionBlueprint {
 }
 
 export interface SolveResponse {
-  result: DecisionBlueprint | any;
+  result: DecisionBlueprint | null;
   error?: string;
 }
 

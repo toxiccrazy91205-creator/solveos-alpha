@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, Crown, AlertTriangle } from 'lucide-react';
-import DecisionBlueprint from '@/components/DecisionBlueprint';
+import DecisionBlueprintBoard from '@/components/DecisionBlueprint';
 import AgentEngine from '@/components/AgentEngine';
 import LanguageSelector from '@/components/LanguageSelector';
+
+import type { DecisionBlueprint } from '../lib/types';
 
 import en from '@/locales/en/common.json';
 import ru from '@/locales/ru/common.json';
@@ -14,7 +16,7 @@ import de from '@/locales/de/common.json';
 import es from '@/locales/es/common.json';
 import zh from '@/locales/zh/common.json';
 
-const locales: Record<string, any> = { 
+const locales: Record<string, Record<string, string>> = { 
   auto: en, // Default to en for auto UI before detection
   English: en, 
   Russian: ru, 
@@ -98,7 +100,6 @@ export default function Home() {
     }
   };
 
-  return (
   return (
     <main className="min-h-screen bg-black text-white selection:bg-neutral-800 flex flex-col items-center py-8 sm:py-12 px-6 font-sans bg-terminal-notes overflow-x-hidden">
       <div className="w-full max-w-4xl flex flex-col items-center">
@@ -255,7 +256,7 @@ export default function Home() {
               ].map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
                   className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-300 ${
                     activeTab === tab.id 
                       ? 'bg-white/10 text-white shadow-xl border border-white/10' 
@@ -276,7 +277,7 @@ export default function Home() {
                   exit={{ opacity: 0, x: 20 }}
                   className="w-full flex flex-col items-center"
                 >
-                  <DecisionBlueprint data={result} debugMode={debugMode} />
+                  <DecisionBlueprintBoard data={result as unknown as DecisionBlueprint} />
                 </motion.div>
               )}
 
@@ -320,9 +321,9 @@ export default function Home() {
                      </h3>
                      <div className="space-y-8">
                         {[
-                          { label: t.today, content: (result as any).actionPlan?.today },
-                          { label: t.this_week, content: (result as any).actionPlan?.thisWeek },
-                          { label: t.thirty_days, content: (result as any).actionPlan?.thirtyDays }
+                          { label: t.today, content: (result as unknown as DecisionBlueprint).actionPlan?.today },
+                          { label: t.this_week, content: (result as unknown as DecisionBlueprint).actionPlan?.thisWeek },
+                          { label: t.thirty_days, content: (result as unknown as DecisionBlueprint).actionPlan?.thirtyDays }
                         ].map((step, i) => (
                           <div key={i} className="flex space-x-6">
                             <div className="flex flex-col items-center">
