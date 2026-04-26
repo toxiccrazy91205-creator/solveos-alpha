@@ -141,6 +141,36 @@ body {
   border-radius: 50%;
   z-index: -1;
 }
+@keyframes breathing-core {
+  0%, 100% { filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.4)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 35px rgba(168, 85, 247, 0.7)); transform: scale(1.05); }
+}
+
+@keyframes active-rotation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes status-blinker {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-breathing-core {
+  animation: breathing-core 4s ease-in-out infinite;
+}
+
+.animate-active-core {
+  animation: active-rotation 2s linear infinite;
+}
+
+.animate-status {
+  animation: status-blinker 1s steps(2) infinite;
+}
+
+.core-active-glow {
+  box-shadow: 0 0 60px rgba(168, 85, 247, 0.5), inset 0 0 20px rgba(168, 85, 247, 0.3);
+}
 
 /* OS-Level Animations */
 @keyframes core-glow {

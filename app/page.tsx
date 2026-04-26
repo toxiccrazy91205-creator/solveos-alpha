@@ -94,17 +94,17 @@ export default function Home() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[150%] bg-purple-500/5 blur-[120px] rounded-full animate-neural pointer-events-none" />
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/5 blur-[100px] rounded-full animate-float pointer-events-none" />
 
-      <Navbar currentLanguage={language} onOpenSettings={() => setSettingsOpen(true)} />
+      <Navbar currentLanguage={language} onOpenSettings={() => setSettingsOpen(true)} isLoading={loading} />
       
       <div className="w-full max-w-5xl flex flex-col items-center relative z-10">
 
         {/* Header */}
-        <div className="text-center mb-6 mt-2 w-full">
+        <div className="text-center mb-10 mt-12 w-full">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => setDebugMode(!debugMode)}
-            className="inline-flex items-center space-x-2 mb-4 bg-white/[0.03] border border-white/10 px-3 py-1 rounded-full cursor-pointer hover:bg-white/10 transition-colors"
+            className="inline-flex items-center space-x-2 mb-6 bg-white/[0.03] border border-white/10 px-3 py-1 rounded-full cursor-pointer hover:bg-white/10 transition-colors"
           >
             <span className="text-[10px] text-neutral-500 font-bold tracking-widest uppercase">{t.system_badge || 'ALPHA • DECISION OS'}</span>
             {debugMode && <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 rounded ml-1 font-bold tracking-tighter uppercase">Debug</span>}
@@ -113,11 +113,11 @@ export default function Home() {
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center text-7xl sm:text-8xl lg:text-9xl font-medium tracking-tighter text-white brand-wordmark mb-1"
+            className="flex items-center justify-center text-7xl sm:text-8xl lg:text-[10rem] font-medium tracking-tighter text-white brand-wordmark mb-1"
           >
             <span>SOLVE</span>
-            <div className="mx-4 w-[0.8em] h-[0.8em] flex items-center justify-center active-core-ring animate-core">
-               <span className="text-purple-500 animate-pulse text-[0.6em]">◉</span>
+            <div className={`mx-4 w-[0.8em] h-[0.8em] flex items-center justify-center active-core-ring animate-breathing-core ${loading ? 'animate-active-core core-active-glow' : ''}`}>
+               <span className="text-purple-500 text-[0.6em] relative z-10">◉</span>
             </div>
             <span>S</span>
           </motion.h1>
@@ -126,19 +126,24 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-lg sm:text-xl text-neutral-400 font-bold tracking-[0.1em] uppercase mb-1"
+            className="text-lg sm:text-2xl text-neutral-400 font-black tracking-[0.2em] uppercase mb-1"
           >
             {t.tagline}
           </motion.p>
           
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-sm sm:text-base text-neutral-600 font-medium tracking-tight italic"
+            className="flex flex-col items-center"
           >
-            {t.simulate_outcomes}
-          </motion.p>
+            <p className="text-sm sm:text-lg text-neutral-600 font-medium tracking-tight italic mb-2">
+              {t.simulate_outcomes}
+            </p>
+            <p className="text-[10px] text-neutral-800 font-black uppercase tracking-[0.5em]">
+              Simulate before you commit.
+            </p>
+          </motion.div>
         </div>
 
         {/* Agent Thinking Strip */}
@@ -146,20 +151,20 @@ export default function Home() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="flex items-center space-x-8 mb-8 bg-white/[0.02] border border-white/5 px-6 py-2 rounded-full backdrop-blur-md"
+          className="flex items-center space-x-6 mb-12 bg-white/[0.02] border border-white/5 px-8 py-3 rounded-full backdrop-blur-3xl shadow-2xl"
         >
           {[
-            { name: t.agent_strategist, color: 'text-emerald-400', glow: 'bg-emerald-400' },
-            { name: t.agent_skeptic, color: 'text-rose-400', glow: 'bg-rose-400' },
-            { name: t.agent_operator, color: 'text-blue-400', glow: 'bg-blue-400' }
+            { name: t.agent_strategist, color: 'text-emerald-400', glow: 'bg-emerald-500' },
+            { name: t.agent_skeptic, color: 'text-rose-400', glow: 'bg-rose-500' },
+            { name: t.agent_operator, color: 'text-blue-400', glow: 'bg-blue-500' },
+            { name: 'Contrarian', color: 'text-amber-400', glow: 'bg-amber-500' },
+            { name: 'Black Swan', color: 'text-purple-400', glow: 'bg-purple-500' }
           ].map((agent, i) => (
-            <div key={i} className="flex items-center space-x-2">
-              <div className={`w-1 h-1 rounded-full ${agent.glow} animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.5)]`} />
-              <span className={`text-[9px] font-black uppercase tracking-widest ${agent.color}`}>{agent.name}</span>
+            <div key={i} className="flex items-center space-x-2 border-r border-white/5 pr-6 last:border-0 last:pr-0">
+              <div className={`w-1.5 h-1.5 rounded-full ${agent.glow} ${loading ? 'animate-pulse' : 'opacity-40'} shadow-[0_0_8px_rgba(255,255,255,0.2)]`} />
+              <span className={`text-[9px] font-black uppercase tracking-widest ${agent.color} ${loading ? 'opacity-100' : 'opacity-40'}`}>{agent.name}</span>
             </div>
           ))}
-          <div className="w-[1px] h-3 bg-white/10" />
-          <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest">Active Simulation Grid</span>
         </motion.div>
 
         {/* Main Console Layout */}
@@ -270,7 +275,7 @@ export default function Home() {
                       ) : (
                         <div className="flex items-center space-x-4 text-white">
                           <span className="text-lg font-black uppercase tracking-[0.4em] group-hover:text-black transition-colors">
-                            START WAR ROOM →
+                            PRESSURE TEST DECISION →
                           </span>
                         </div>
                       )}
