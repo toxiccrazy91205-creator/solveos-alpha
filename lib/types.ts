@@ -1,5 +1,6 @@
 export interface SolveRequest {
   problem: string;
+  language?: string;
 }
 
 export interface AgentAnalysis {
@@ -35,6 +36,7 @@ export interface DecisionBlueprint {
     thisWeek: string;
     thirtyDays: string;
   };
+  language?: string;
   isDemo?: boolean;
 }
 

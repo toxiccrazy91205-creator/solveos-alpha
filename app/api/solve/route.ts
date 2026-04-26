@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     // Run the multi-agent engine
-    const blueprint = await solveDecision(body.problem.trim());
+    const blueprint = await solveDecision(body.problem.trim(), body.language);
 
     // Save to memory foundation
     const entry = await saveDecision({

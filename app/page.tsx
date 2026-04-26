@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, Crown, AlertTriangle } from 'lucide-react';
 import DecisionBlueprint from '@/components/DecisionBlueprint';
 import AgentEngine from '@/components/AgentEngine';
+import LanguageSelector from '@/components/LanguageSelector';
 
 const LOADING_MESSAGES = [
   "Analyzing decision...",
@@ -15,6 +16,7 @@ const LOADING_MESSAGES = [
 
 export default function Home() {
   const [problem, setProblem] = useState('');
+  const [language, setLanguage] = useState('auto');
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
@@ -51,7 +53,7 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ problem: currentProblem }),
+        body: JSON.stringify({ problem: currentProblem, language }),
       });
 
       const data = await response.json();
@@ -128,6 +130,9 @@ export default function Home() {
                 Decision Simulator
               </span>
             </div>
+            
+            <LanguageSelector currentLanguage={language} onLanguageChange={setLanguage} />
+
             <textarea
               value={problem}
               onChange={(e) => {
