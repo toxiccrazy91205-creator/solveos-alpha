@@ -7,6 +7,23 @@ import DecisionBlueprint from '@/components/DecisionBlueprint';
 import AgentEngine from '@/components/AgentEngine';
 import LanguageSelector from '@/components/LanguageSelector';
 
+import en from '@/locales/en/common.json';
+import ru from '@/locales/ru/common.json';
+import ar from '@/locales/ar/common.json';
+import de from '@/locales/de/common.json';
+import es from '@/locales/es/common.json';
+import zh from '@/locales/zh/common.json';
+
+const locales: Record<string, any> = { 
+  auto: en, // Default to en for auto UI before detection
+  English: en, 
+  Russian: ru, 
+  Arabic: ar, 
+  German: de, 
+  Spanish: es, 
+  Chinese: zh 
+};
+
 const LOADING_MESSAGES = [
   "Analyzing decision...",
   "Running scenario simulations...",
@@ -22,6 +39,11 @@ export default function Home() {
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showBoard, setShowBoard] = useState(false);
+
+  // Determine current translation set based on selected language
+  // Use result.language if available (auto-detected), otherwise use selection state
+  const currentLang = result?.language || language;
+  const t = locales[currentLang as string] || locales.English;
 
   useEffect(() => {
     if (!loading) {
@@ -102,7 +124,7 @@ export default function Home() {
             transition={{ delay: 0.1 }}
             className="text-lg sm:text-xl lg:text-3xl text-neutral-400 font-light tracking-tight mb-4 lg:mb-6 px-4"
           >
-            ChatGPT is for questions. <span className="text-white font-medium">SolveOS is for decisions.</span>
+            {t.tagline_questions || 'ChatGPT is for questions.'} <span className="text-white font-medium">{t.tagline_decisions || 'SolveOS is for decisions.'}</span>
           </motion.p>
           <motion.p
             initial={{ opacity: 0 }}
@@ -110,7 +132,7 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="text-xs sm:text-sm lg:text-base text-neutral-500 font-medium tracking-widest uppercase px-4"
           >
-            Simulate outcomes. Reduce risk. Decide with clarity.
+            {t.simulate_outcomes || 'Simulate outcomes. Reduce risk. Decide with clarity.'}
           </motion.p>
         </div>
 
@@ -127,7 +149,7 @@ export default function Home() {
             <div className="mb-5 flex items-center space-x-2 px-1">
               <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
               <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-purple-400">
-                Decision Simulator
+                {t.decision_simulator || 'Decision Simulator'}
               </span>
             </div>
             
@@ -139,19 +161,19 @@ export default function Home() {
                 setProblem(e.target.value);
                 if (error) setError(null);
               }}
-              placeholder="What major strategic decision are you facing?"
+              placeholder={t.placeholder || 'What major strategic decision are you facing?'}
               className="w-full h-32 sm:h-48 bg-transparent text-lg sm:text-xl lg:text-3xl text-white placeholder-neutral-600 focus:outline-none resize-none font-light leading-relaxed px-1"
             />
 
             <div className="mt-6 flex flex-col space-y-3">
               <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest px-1">
-                Quick Scenarios (Full Simulation)
+                {t.quick_scenarios || 'Quick Scenarios (Full Simulation)'}
               </span>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { text: "Quit job & start AI startup?", icon: "🚀" },
-                  { text: "Move abroad for opportunity?", icon: "🌍" },
-                  { text: "Invest savings into business?", icon: "💰" }
+                  { text: t.scenario_quit || "Quit job & start AI startup?", icon: "🚀" },
+                  { text: t.scenario_move || "Move abroad for opportunity?", icon: "🌍" },
+                  { text: t.scenario_invest || "Invest savings into business?", icon: "💰" }
                 ].map((sample, i) => (
                   <button
                     key={i}
@@ -198,7 +220,7 @@ export default function Home() {
                 ) : (
                   <>
                     <span className="text-2xl group-hover:-translate-y-1 transition-transform duration-300">🚀</span>
-                    <span>Launch Simulation</span>
+                    <span>{t.launch_simulation || 'Launch Simulation'}</span>
                   </>
                 )}
               </button>
@@ -237,8 +259,8 @@ export default function Home() {
                 className="mt-16 px-10 py-4 bg-neutral-900/80 backdrop-blur-md hover:bg-neutral-800 border border-purple-500/30 text-white rounded-2xl font-medium text-base transition-all duration-300 flex items-center justify-center space-x-3 shadow-[0_0_30px_rgba(168,85,247,0.15)] hover:shadow-[0_0_50px_rgba(168,85,247,0.3)] group"
               >
                 <Crown className="w-5 h-5 text-purple-400 group-hover:scale-110 group-hover:-rotate-12 transition-transform" />
-                <span>Run AI Board</span>
-                <span className="bg-purple-500/20 text-purple-300 text-[10px] uppercase px-2 py-0.5 rounded-full ml-2 border border-purple-500/20">Premium</span>
+                <span>{t.run_ai_board || 'Run AI Board'}</span>
+                <span className="bg-purple-500/20 text-purple-300 text-[10px] uppercase px-2 py-0.5 rounded-full ml-2 border border-purple-500/20">{t.premium || 'Premium'}</span>
               </motion.button>
             ) : (
               <AgentEngine problem={problem} initialSolution={result!} />

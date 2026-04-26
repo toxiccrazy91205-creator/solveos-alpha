@@ -19,5 +19,17 @@
   "today": "Today",
   "this_week": "This Week",
   "thirty_days": "30 Days",
-  "demo_mode": "Demo Simulation Mode"
+  "demo_mode": "Demo Simulation Mode",
+  "tagline_questions": "ChatGPT is for questions.",
+  "tagline_decisions": "SolveOS is for decisions.",
+  "simulate_outcomes": "Simulate outcomes. Reduce risk. Decide with clarity.",
+  "decision_simulator": "Decision Simulator",
+  "placeholder": "What major strategic decision are you facing?",
+  "quick_scenarios": "Quick Scenarios (Full Simulation)",
+  "scenario_quit": "Quit job & start AI startup?",
+  "scenario_move": "Move abroad for opportunity?",
+  "scenario_invest": "Invest savings into business?",
+  "run_ai_board": "Run AI Board",
+  "premium": "Premium",
+  "months_out": "Months Out"
 }
