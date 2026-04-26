@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
-import { buildSolvePrompt } from '@/lib/prompts';
+import { solveDecision } from '@/lib/engine';
+import { saveDecision } from '@/lib/memory';
 import { SolveRequest, SolveResponse } from '@/lib/types';
-
-
 
 export async function POST(req: Request) {
   try {
@@ -16,25 +14,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const completion = await new OpenAI().chat.completions.create({
-      model: 'gpt-4o', 
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: 'You are an expert decision-making AI.' },
-        { role: 'user', content: buildSolvePrompt(body.problem.trim()) }
-      ],
-      temperature: 0.7,
+    // Run the multi-agent engine
+    const blueprint = await solveDecision(body.problem.trim());
+
+    // Save to memory foundation
+    const entry = await saveDecision({
+      problem: body.problem.trim(),
+      blueprint
     });
 
-    const rawContent = completion.choices[0]?.message?.content || '{}';
-    let result;
-    try {
-      result = JSON.parse(rawContent);
-    } catch {
-      result = rawContent;
-    }
-
-    return NextResponse.json({ result } as SolveResponse);
+    return NextResponse.json({ result: blueprint } as SolveResponse);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An unexpected error occurred while processing your decision.';
     console.error('API /api/solve error:', error);
