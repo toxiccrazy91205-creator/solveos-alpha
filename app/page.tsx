@@ -34,7 +34,7 @@ export default function Home() {
           </h1>
 
           <p className="text-xl sm:text-3xl text-[#F8FAFF] font-semibold mb-3">
-            The Operating System for High-Stakes Decisions
+            The Operating System for Strategic Decisions
           </p>
 
           <div className="flex flex-col items-center mt-6">
