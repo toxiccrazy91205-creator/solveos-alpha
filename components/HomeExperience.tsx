@@ -128,6 +128,8 @@ export default function HomeExperience() {
   const [calibratedScore, setCalibratedScore] = useState<number | undefined>(undefined);
   const [calibrationOffset, setCalibrationOffset] = useState<number | undefined>(undefined);
   const [calibrationSampleSize, setCalibrationSampleSize] = useState<number | undefined>(undefined);
+  const [decisionAccuracy, setDecisionAccuracy] = useState<number | undefined>(undefined);
+  const [calibrationScore, setCalibrationScore] = useState<number | undefined>(undefined);
   const [latestDecisionId, setLatestDecisionId] = useState<string | undefined>(undefined);
 
   // Keep a stable ref to thread so handleSubmit always sees the latest value
@@ -248,6 +250,8 @@ export default function HomeExperience() {
         if (typeof data.calibratedScore === 'number') setCalibratedScore(data.calibratedScore);
         if (typeof data.calibrationOffset === 'number') setCalibrationOffset(data.calibrationOffset);
         if (typeof data.calibrationSampleSize === 'number') setCalibrationSampleSize(data.calibrationSampleSize);
+        if (typeof data.decisionAccuracy === 'number') setDecisionAccuracy(data.decisionAccuracy);
+        if (typeof data.calibrationScore === 'number') setCalibrationScore(data.calibrationScore);
         setIntelligence(snap);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
@@ -331,6 +335,8 @@ export default function HomeExperience() {
             calibrationOffset={calibrationOffset}
             calibrationSampleSize={calibrationSampleSize}
             decisionId={latestDecisionId}
+            decisionAccuracy={decisionAccuracy}
+            calibrationScore={calibrationScore}
           />
         )}
       </div>

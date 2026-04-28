@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { saveDecision, getDecisionHistory } from '@/lib/memory';
 import { getMemoryIntelligenceFromHistory } from '@/lib/memory-graph';
-import { computeNetworkIntelligence, calibrateScore, buildCalibrationContext } from '@/lib/benchmarks';
-import { isPlanModeRequest, semanticVerdictForQuestion, shouldRejectDecisionOutput, detectVerdictLoop, buildForceDiversityInstruction, semanticVerdictExcluding, extractVerdictClass, buildIntentInstruction, enforceIntentRouting } from '@/lib/semantic-guards';
-import type { CouncilMetrics, CounterfactualPath, DecisionBlueprint, DecisionContext, ExecutionPlanWeek, PreMortemRisk, ScenarioBranch, SecondOrderEffect, SolveRequest, SolveResponse, WarRoomDebate } from '@/lib/types';
+import { computeNetworkIntelligence, calibrateScore, buildCalibrationContext, computeDecisionAccuracy, computeCalibrationScore } from '@/lib/benchmarks';
+import { isPlanModeRequest, isReviewModeRequest, semanticVerdictForQuestion, shouldRejectDecisionOutput, detectVerdictLoop, buildForceDiversityInstruction, semanticVerdictExcluding, extractVerdictClass, buildIntentInstruction, enforceIntentRouting } from '@/lib/semantic-guards';
+import type { CouncilMetrics, CounterfactualPath, DecisionBlueprint, DecisionContext, ExecutionPlanWeek, MilestoneMetric, MilestoneStatus, PreMortemRisk, ScenarioBranch, SecondOrderEffect, SolveRequest, SolveResponse, WarRoomDebate } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +32,7 @@ function readConversationContext(body: Partial<SolveRequest> | undefined): strin
 }
 
 function readMode(body: Partial<SolveRequest> | undefined): NonNullable<SolveRequest['mode']> {
-  return body?.mode === 'Risk' || body?.mode === 'Scenarios' || body?.mode === 'Red Team'
+  return body?.mode === 'Risk' || body?.mode === 'Scenarios' || body?.mode === 'Red Team' || body?.mode === 'Review'
     ? body.mode
     : 'Strategy';
 }
@@ -163,6 +163,25 @@ function defaultExecutionPlan(operatorNextSteps: string[]): ExecutionPlanWeek[] 
   ];
 }
 
+const VALID_MILESTONE_STATUSES = new Set<MilestoneStatus>(['on_track', 'behind', 'exceeded', 'failed', 'unknown']);
+const VALID_MILESTONE_HORIZONS = new Set<MilestoneMetric['horizon']>(['30 days', '60 days', '90 days']);
+
+function normalizeMilestoneTable(value: unknown): MilestoneMetric[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const rows = value.filter(isRecord).map((row): MilestoneMetric => ({
+    horizon: VALID_MILESTONE_HORIZONS.has(row.horizon as MilestoneMetric['horizon'])
+      ? (row.horizon as MilestoneMetric['horizon'])
+      : '30 days',
+    milestone: safeText(row.milestone, 'Milestone'),
+    status: VALID_MILESTONE_STATUSES.has(row.status as MilestoneStatus)
+      ? (row.status as MilestoneStatus)
+      : 'unknown',
+    metric: safeText(row.metric, ''),
+    evidence: safeText(row.evidence, ''),
+  }));
+  return rows.length > 0 ? rows : undefined;
+}
+
 function normalizeBlueprint(value: unknown, problem: string, language: string, mode = 'Strategy'): DecisionBlueprint {
   const blueprint = isRecord(value) ? value : {};
   const strategistView = isRecord(blueprint.strategistView) ? blueprint.strategistView : {};
@@ -220,13 +239,19 @@ function normalizeBlueprint(value: unknown, problem: string, language: string, m
   const economistView = safeText(blueprint.economistView, 'The opportunity cost is capital, attention, and time that cannot be reused if the bet is wrong.');
   const outcomeLessonPrompt = safeText(blueprint.outcomeLessonPrompt, 'What happened after execution, and which assumption was most wrong?');
   const riskScore = clampScore(riskMap.risk, 100 - score);
-  const recommendation = safeText(blueprint.recommendation, semanticVerdictForQuestion(problem, mode));
+  const reviewMode = blueprint.isReviewMode === true || mode === 'Review';
+  const milestoneTable = normalizeMilestoneTable(blueprint.milestoneTable);
+  const recommendation = reviewMode
+    ? safeText(blueprint.recommendation, '')
+    : safeText(blueprint.recommendation, semanticVerdictForQuestion(problem, mode));
   const outputText = JSON.stringify({ ...blueprint, recommendation });
-  const shouldReplaceRecommendation = shouldRejectDecisionOutput(problem, outputText);
+  const shouldReplaceRecommendation = !reviewMode && shouldRejectDecisionOutput(problem, outputText);
   const planMode = isPlanModeRequest(problem);
-  const finalRecommendation = planMode
-    ? 'Operator Plan: 30-day experiment design with weekly go / no-go thresholds.'
-    : shouldReplaceRecommendation ? semanticVerdictForQuestion(problem, mode) : recommendation;
+  const finalRecommendation = reviewMode
+    ? recommendation
+    : planMode
+      ? 'Operator Plan: 30-day experiment design with weekly go / no-go thresholds.'
+      : shouldReplaceRecommendation ? semanticVerdictForQuestion(problem, mode) : recommendation;
   const warRoomDebate = isRecord(blueprint.warRoomDebate) ? blueprint.warRoomDebate : {};
   const finalSynthesis = isRecord(warRoomDebate.finalSynthesis) ? warRoomDebate.finalSynthesis : {};
   const debateDefaults = defaultWarRoomDebate({
@@ -367,6 +392,8 @@ function normalizeBlueprint(value: unknown, problem: string, language: string, m
     },
     language: safeText(blueprint.language, language || 'en'),
     isDemo: typeof blueprint.isDemo === 'boolean' ? blueprint.isDemo : undefined,
+    isReviewMode: reviewMode || undefined,
+    milestoneTable: milestoneTable,
     council: {
       ...defaultCouncil(),
       ...council,
@@ -414,13 +441,15 @@ export async function POST(req: Request) {
     }
 
     const history = await getDecisionHistory().catch(() => []);
+    const isReview = isReviewModeRequest(problem);
+    const effectiveMode = isReview ? 'Review' : mode;
     const rawConversationContext = readConversationContext(body);
     const conversationHistoryForGuard = Array.isArray(body?.conversationHistory)
       ? (body.conversationHistory as Array<{ role: string; content: string }>)
       : [];
-    const bannedVerdict = detectVerdictLoop(conversationHistoryForGuard);
+    const bannedVerdict = isReview ? null : detectVerdictLoop(conversationHistoryForGuard);
     const diversityInstruction = bannedVerdict ? buildForceDiversityInstruction(bannedVerdict) : '';
-    const intentInstruction = buildIntentInstruction(problem, conversationHistoryForGuard);
+    const intentInstruction = isReview ? '' : buildIntentInstruction(problem, conversationHistoryForGuard);
     const conversationContext = [rawConversationContext, diversityInstruction, intentInstruction]
       .filter(Boolean)
       .join('\n\n')
@@ -445,13 +474,53 @@ export async function POST(req: Request) {
 
     const fullContext = [memoryContext, calibrationNote].filter(Boolean).join('\n\n');
     const { solveDecision } = await import('@/lib/engine');
-    const rawBlueprint = await solveDecision(problem, language, fullContext, conversationContext, mode);
-    const blueprint = normalizeBlueprint(rawBlueprint, problem, language, mode);
+    const rawBlueprint = await solveDecision(problem, language, fullContext, conversationContext, effectiveMode);
+    const blueprint = normalizeBlueprint(rawBlueprint, problem, language, effectiveMode);
 
-    if (bannedVerdict && extractVerdictClass(blueprint.recommendation) === bannedVerdict) {
-      blueprint.recommendation = semanticVerdictExcluding(problem, mode, bannedVerdict);
+    // HARD ROUTING: Force Review Mode for detected review prompts
+    if (isReview) {
+      blueprint.isReviewMode = true;
+      
+      // Ensure recommendation starts with "Review:" and has no verdict classes
+      const rec = String(blueprint.recommendation || '');
+      const hasVerdictClass = ['Full Commit', 'Reversible Experiment', 'Delay', 'Kill The Idea']
+        .some(cls => rec.includes(cls));
+      if (hasVerdictClass || !rec.startsWith('Review:')) {
+        blueprint.recommendation = 'Review: Milestone assessment — see scorecard below for 30/60/90-day checkpoint analysis.';
+      }
+      
+      // Ensure milestoneTable is populated with 30/60/90 day structure
+      if (!Array.isArray(blueprint.milestoneTable) || blueprint.milestoneTable.length === 0) {
+        blueprint.milestoneTable = [
+          {
+            horizon: '30 days',
+            milestone: 'Initial outcome signal',
+            status: 'unknown',
+            metric: 'Track against original assumptions',
+            evidence: 'Validate if first-order metrics align with plan',
+          },
+          {
+            horizon: '60 days',
+            milestone: 'Pattern confirmation',
+            status: 'unknown',
+            metric: 'Confirm if trajectory holds or diverges',
+            evidence: 'Early evidence about hidden assumption failures',
+          },
+          {
+            horizon: '90 days',
+            milestone: 'Decision verdict',
+            status: 'unknown',
+            metric: 'Final go / no-go checkpoint',
+            evidence: 'Enough data to confirm or overturn original decision',
+          },
+        ];
+      }
     }
-    const intentOverride = enforceIntentRouting(problem, mode, blueprint.recommendation);
+
+    if (!isReview && bannedVerdict && extractVerdictClass(blueprint.recommendation) === bannedVerdict) {
+      blueprint.recommendation = semanticVerdictExcluding(problem, effectiveMode, bannedVerdict);
+    }
+    const intentOverride = isReview ? null : enforceIntentRouting(problem, effectiveMode, blueprint.recommendation);
     if (intentOverride) blueprint.recommendation = intentOverride;
     const calibration = calibrateScore(blueprint.score, history, domain, problem, context);
     const riskPenalty =
@@ -483,6 +552,8 @@ export async function POST(req: Request) {
     };
 
     const saved = await saveDecision({ problem, blueprint, context });
+    const decisionAccuracy = computeDecisionAccuracy(history);
+    const calibrationScore = computeCalibrationScore(history);
 
     const response: SolveResponse = {
       result: blueprint,
@@ -493,6 +564,8 @@ export async function POST(req: Request) {
       calibrationOffset: calibration.offset,
       calibrationSampleSize: calibration.sampleSize,
       calibrationConfidence: calibration.confidence,
+      decisionAccuracy,
+      calibrationScore,
     };
 
     return NextResponse.json(response);

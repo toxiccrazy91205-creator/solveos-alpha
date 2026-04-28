@@ -75,7 +75,7 @@ function OutcomeLogger({ decisionId, blueprintScore }: OutcomeLoggerProps) {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [notes, setNotes] = useState('');
   const [loggedChoice, setLoggedChoice] = useState<Choice | null>(null);
-  const [scheduledDays, setScheduledDays] = useState<7 | 30 | null>(null);
+  const [scheduledDays, setScheduledDays] = useState<30 | 60 | 90 | null>(null);
 
   const selected = CHOICES.find(c => c.id === choice);
   const logged = CHOICES.find(c => c.id === loggedChoice);
@@ -117,16 +117,17 @@ function OutcomeLogger({ decisionId, blueprintScore }: OutcomeLoggerProps) {
     }
   };
 
-  const scheduleReview = async (days: 7 | 30) => {
+  const scheduleReview = async (days: 30 | 60 | 90) => {
     setScheduledDays(days);
     setPhase('submitting');
     try {
+      const reviewType = days === 30 ? '30day' : days === 60 ? '60day' : '90day';
       const res = await fetch('/api/outcomes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           decisionId,
-          pendingReview: { reviewType: days === 7 ? '7day' : '30day' },
+          pendingReview: { reviewType },
         }),
       });
 
@@ -172,7 +173,7 @@ function OutcomeLogger({ decisionId, blueprintScore }: OutcomeLoggerProps) {
           <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">
-              Review Scheduled · {scheduledDays === 7 ? '7 Days' : '30 Days'}
+              Review Scheduled · {scheduledDays} Days
             </p>
             <p className="text-[9px] text-slate-500 mt-0.5">
               Reminder set for {formatReviewDate(scheduledDays)} — visit Enterprise to log the outcome when ready.
@@ -219,20 +220,27 @@ function OutcomeLogger({ decisionId, blueprintScore }: OutcomeLoggerProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => void scheduleReview(7)}
-            className="flex flex-col items-start px-4 py-4 rounded-xl border border-slate-500/20 bg-white/[0.02] hover:bg-slate-500/[0.06] hover:border-slate-400/30 transition-all"
-          >
-            <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">7 Days</span>
-            <span className="text-[9px] text-slate-500 mt-1">{formatReviewDate(7)}</span>
-          </button>
+        <div className="grid grid-cols-3 gap-3">
           <button
             onClick={() => void scheduleReview(30)}
             className="flex flex-col items-start px-4 py-4 rounded-xl border border-slate-500/20 bg-white/[0.02] hover:bg-slate-500/[0.06] hover:border-slate-400/30 transition-all"
           >
             <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">30 Days</span>
             <span className="text-[9px] text-slate-500 mt-1">{formatReviewDate(30)}</span>
+          </button>
+          <button
+            onClick={() => void scheduleReview(60)}
+            className="flex flex-col items-start px-4 py-4 rounded-xl border border-slate-500/20 bg-white/[0.02] hover:bg-slate-500/[0.06] hover:border-slate-400/30 transition-all"
+          >
+            <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">60 Days</span>
+            <span className="text-[9px] text-slate-500 mt-1">{formatReviewDate(60)}</span>
+          </button>
+          <button
+            onClick={() => void scheduleReview(90)}
+            className="flex flex-col items-start px-4 py-4 rounded-xl border border-slate-500/20 bg-white/[0.02] hover:bg-slate-500/[0.06] hover:border-slate-400/30 transition-all"
+          >
+            <span className="text-[10px] font-black uppercase text-slate-300 tracking-widest">90 Days</span>
+            <span className="text-[9px] text-slate-500 mt-1">{formatReviewDate(90)}</span>
           </button>
         </div>
 

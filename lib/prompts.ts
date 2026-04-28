@@ -58,6 +58,16 @@ Maintain an elite, emotionally intelligent, but strictly strategic advisor tone.
 }
 
 export function buildModeSystemPrompt(mode: string = 'Strategy'): string {
+  if (mode === 'Review') {
+    return `You are running SolveOS in REVIEW mode.
+The user is revisiting a past decision — not making a new one.
+Do NOT issue a verdict class. Never start any field with "Full Commit", "Reversible Experiment", "Delay", or "Kill The Idea".
+The recommendation field must start with "Review:" — never with a verdict class.
+Your job: assess what actually happened versus what was predicted.
+Return a milestone metrics table covering 30, 60, and 90 day checkpoints.
+Be honest about failures. Do not soften negative outcomes.`;
+  }
+
   if (mode === 'Red Team') {
     return `You are running SolveOS in RED TEAM mode.
 Your job is to attack the prior recommendation, not preserve it.
@@ -329,5 +339,100 @@ Rules:
 - Make risks specific enough for an executive team to act on.
 - Make warRoomDebate feel like advisors debating live. The four voices must disagree, not summarize each other.
 - Make confidenceScore reflect strategic upside, risk exposure, reversibility, and evidence strength.
+Only output JSON.`;
+}
+
+export function buildReviewSynthesizerPrompt(
+  problem: string,
+  strategist: string,
+  skeptic: string,
+  operator: string,
+  language: string = 'English',
+  memoryContext?: string,
+  conversationContext?: string,
+): string {
+  const memorySection = memoryContext
+    ? `\n\nHISTORICAL CONTEXT (prior decisions and outcomes):\n${memoryContext}`
+    : '';
+  const threadSection = conversationContext
+    ? `\n\nPRIOR CONTEXT:\n${conversationContext}`
+    : '';
+
+  return `You are the SolveOS review brain.
+This is a REVIEW session — the user is checking back on a past decision, not making a new one.
+Do NOT issue a verdict class. Never use "Full Commit", "Reversible Experiment", "Delay", or "Kill The Idea" as the recommendation.
+The recommendation MUST start with "Review:".
+
+Decision being reviewed: "${problem}"
+
+Council assessments:
+Strategist: ${strategist}
+Skeptic: ${skeptic}
+Operator: ${operator}${memorySection}${threadSection}
+
+CRITICAL: EVERY SINGLE FIELD must be written in ${language}.
+YOU MUST RETURN A VALID JSON OBJECT exactly matching this structure:
+{
+  "recommendation": "Review: [honest one-sentence assessment of how the decision played out in ${language}]",
+  "isReviewMode": true,
+  "milestoneTable": [
+    {
+      "horizon": "30 days",
+      "milestone": "Specific measurable result that should have been visible at 30 days in ${language}",
+      "status": "on_track | behind | exceeded | failed | unknown",
+      "metric": "The actual or expected metric at this checkpoint in ${language}",
+      "evidence": "Evidence supporting this status in ${language}"
+    },
+    {
+      "horizon": "60 days",
+      "milestone": "Specific measurable result at 60 days in ${language}",
+      "status": "on_track | behind | exceeded | failed | unknown",
+      "metric": "Metric in ${language}",
+      "evidence": "Evidence in ${language}"
+    },
+    {
+      "horizon": "90 days",
+      "milestone": "Specific measurable result at 90 days in ${language}",
+      "status": "on_track | behind | exceeded | failed | unknown",
+      "metric": "Metric in ${language}",
+      "evidence": "Evidence in ${language}"
+    }
+  ],
+  "verdictAccuracy": 0-100,
+  "hiddenPain": "What the review reveals that was not visible at decision time in ${language}",
+  "diagnosis": {
+    "coreProblem": "What actually happened versus what was predicted in ${language}",
+    "blindSpots": "What was missed or misjudged in ${language}",
+    "keyRisks": "Which risks materialized and which did not in ${language}"
+  },
+  "paths": {
+    "safe": { "description": "What a more conservative choice would have produced in ${language}", "pros": ["..."], "cons": ["..."] },
+    "balanced": { "description": "What actually played out in ${language}", "pros": ["..."], "cons": ["..."] },
+    "bold": { "description": "What a more aggressive choice would have produced in ${language}", "pros": ["..."], "cons": ["..."] }
+  },
+  "contrarianInsight": {
+    "perspective": "What the review reveals that contradicts the original reasoning in ${language}",
+    "hiddenOpportunity": "What opportunity was missed or is now visible in ${language}",
+    "uncomfortableTruth": "The hardest lesson from this review in ${language}"
+  },
+  "futureSimulation": {
+    "threeMonths": "Projection for the next 3 months based on current trajectory in ${language}",
+    "twelveMonths": "12-month outlook given what is now known in ${language}"
+  },
+  "actionPlan": {
+    "today": "Immediate correction or continuation based on the review in ${language}",
+    "thisWeek": "Priority action this week in ${language}",
+    "thirtyDays": "30-day correction course in ${language}"
+  },
+  "confidenceScore": 0-100,
+  "outcomeLessonPrompt": "Question to capture the core lesson from this review in ${language}"
+}
+
+Rules:
+- Strict JSON only. No markdown.
+- verdictAccuracy: 0-100. Score whether the original verdict was directionally correct. 100 = perfect prediction, 0 = completely wrong.
+- milestoneTable statuses must be realistic — if information is absent, use "unknown", not "on_track".
+- Every milestone needs a specific metric (a number, rate, or named deliverable), not vague descriptions.
+- Be honest about failures. Do not soften negative outcomes with corporate hedging.
 Only output JSON.`;
 }

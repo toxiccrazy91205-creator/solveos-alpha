@@ -375,8 +375,59 @@ export function hasQuestionContradiction(problem: string, output: string): boole
   return false;
 }
 
+// ─── Review Mode ─────────────────────────────────────────────────────────────
+
+const REVIEW_TRIGGERS = [
+  // Explicit review window labels
+  '30 day review', '60 day review', '90 day review',
+  '30-day review', '60-day review', '90-day review',
+  // Retrospective signals
+  'revisit', 'looking back', 'how did it go', 'how did this go',
+  'what happened after', 'update on the decision', 'decision review',
+  'after 30 days', 'after 60 days', 'after 90 days',
+  'months later', 'weeks later', 'outcome review',
+  'post-decision', 'post decision', 'check in on',
+  // Forward-looking review planning (scorecard / milestone / kill criteria requests)
+  'scorecard', 'kill criteria', 'success metrics', 'success criteria',
+  'was a mistake', 'was the right call', 'was it the right', 'was this the right',
+  'define milestones', 'milestone review', 'milestone scorecard',
+  'prove the raise', 'prove it was', 'prove this was', 'would prove',
+  'review in 30', 'review in 60', 'review in 90',
+  'revisit in 30', 'revisit in 60', 'revisit in 90',
+];
+
+export function isReviewModeRequest(problem: string): boolean {
+  const text = problem.toLowerCase();
+  return REVIEW_TRIGGERS.some((t) => text.includes(t));
+}
+
+export function computeVerdictAccuracy(originalVerdict: string, outcomeAccuracy: number): number {
+  const verdictClass = extractVerdictClass(originalVerdict);
+  if (verdictClass === 'Full Commit') {
+    if (outcomeAccuracy >= 70) return 100;
+    if (outcomeAccuracy >= 50) return 60;
+    return 20;
+  }
+  if (verdictClass === 'Kill The Idea') {
+    if (outcomeAccuracy <= 30) return 100;
+    if (outcomeAccuracy <= 50) return 60;
+    return 20;
+  }
+  if (verdictClass === 'Delay') {
+    if (outcomeAccuracy >= 40 && outcomeAccuracy <= 75) return 100;
+    if (outcomeAccuracy > 75) return 70;
+    return 30;
+  }
+  if (verdictClass === 'Reversible Experiment') {
+    if (outcomeAccuracy >= 50) return 90;
+    if (outcomeAccuracy >= 30) return 60;
+    return 30;
+  }
+  return 50;
+}
+
 export function shouldRejectDecisionOutput(problem: string, output: string): boolean {
-  if (isPlanModeRequest(problem)) {
+  if (isPlanModeRequest(problem) || isReviewModeRequest(problem)) {
     return containsGenericVerdict(output) || hasQuestionContradiction(problem, output);
   }
 

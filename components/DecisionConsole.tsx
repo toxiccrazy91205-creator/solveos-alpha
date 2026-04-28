@@ -72,18 +72,25 @@ function AssistantTurn({ turn, isLatest }: { turn: ConversationTurn; isLatest: b
     );
   }
 
+  const isReviewMode = !!bp?.isReviewMode;
+  const milestoneTable = bp?.milestoneTable;
+
   return (
     <div className="space-y-4 blueprint-enter">
       {/* Status bar */}
       <div className="flex items-center space-x-3">
-        <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] flex-shrink-0" />
-        <span className="text-[9px] font-black uppercase text-emerald-300 tracking-widest">Analysis Complete</span>
-        <div className="h-[1px] flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent" />
+        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isReviewMode ? 'bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)]' : 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]'}`} />
+        <span className={`text-[9px] font-black uppercase tracking-widest ${isReviewMode ? 'text-blue-300' : 'text-emerald-300'}`}>
+          {isReviewMode ? 'Review Complete' : 'Analysis Complete'}
+        </span>
+        <div className={`h-[1px] flex-1 bg-gradient-to-r ${isReviewMode ? 'from-blue-500/20' : 'from-emerald-500/20'} to-transparent`} />
       </div>
 
-      {/* Verdict card */}
-      <div className="bg-gradient-to-br from-purple-500/[0.08] to-blue-500/[0.04] border border-purple-500/20 rounded-2xl p-5">
-        <div className="text-[9px] font-black uppercase text-purple-400 mb-3 tracking-widest">Verdict</div>
+      {/* Verdict / Review summary card */}
+      <div className={`rounded-2xl p-5 border ${isReviewMode ? 'bg-gradient-to-br from-blue-500/[0.08] to-slate-500/[0.04] border-blue-500/20' : 'bg-gradient-to-br from-purple-500/[0.08] to-blue-500/[0.04] border-purple-500/20'}`}>
+        <div className={`text-[9px] font-black uppercase mb-3 tracking-widest ${isReviewMode ? 'text-blue-400' : 'text-purple-400'}`}>
+          {isReviewMode ? 'Review' : 'Verdict'}
+        </div>
         <p className="text-[#F8FAFF] text-lg font-semibold leading-relaxed">
           {streamedVerdict}
           {isLatest && !streamDone && (
@@ -92,8 +99,41 @@ function AssistantTurn({ turn, isLatest }: { turn: ConversationTurn; isLatest: b
         </p>
       </div>
 
-      {/* Why / Risks / Next Move */}
-      {showCards && bp && (
+      {/* Milestone scorecard preview (review mode) */}
+      {showCards && isReviewMode && milestoneTable && milestoneTable.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-[9px] font-black uppercase text-slate-500 tracking-widest">Milestone Scorecard</div>
+          <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            {milestoneTable.slice(0, 3).map((row, i) => {
+              const statusColors: Record<string, string> = {
+                on_track: 'text-emerald-400', exceeded: 'text-blue-400',
+                behind: 'text-amber-400', failed: 'text-rose-400', unknown: 'text-slate-500',
+              };
+              return (
+                <div key={i} className="flex items-start space-x-3 px-4 py-3 border-b border-white/[0.04] last:border-b-0">
+                  <span className="text-[9px] font-mono text-slate-500 w-14 flex-shrink-0 pt-0.5">{row.horizon}</span>
+                  <span className="text-[11px] text-slate-300 flex-1 leading-snug">{row.milestone}</span>
+                  <span className={`text-[9px] font-black uppercase tracking-wider flex-shrink-0 ${statusColors[row.status] || 'text-slate-500'}`}>
+                    {row.status.replace('_', ' ')}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* "Full Review Below" divider for review mode */}
+      {showCards && isReviewMode && (
+        <div className="flex items-center justify-center space-x-3 opacity-25 pt-1">
+          <div className="h-[1px] flex-1 bg-white/20" />
+          <span className="text-[8px] font-black uppercase text-slate-400">Full Review Below</span>
+          <div className="h-[1px] flex-1 bg-white/20" />
+        </div>
+      )}
+
+      {/* Why / Risks / Next Move (non-review mode) */}
+      {showCards && bp && !isReviewMode && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white/[0.025] border border-white/[0.06] rounded-xl p-4">

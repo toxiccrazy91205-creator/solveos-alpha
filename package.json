@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "node scripts/response-diversity-test.mjs && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:review": "node scripts/test-review-routing.mjs"
   },
   "dependencies": {
     "@langchain/langgraph": "^1.2.9",

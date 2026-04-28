@@ -122,7 +122,7 @@ export interface ConversationTurn {
 export interface SolveRequest {
   problem: string;
   language?: string;
-  mode?: 'Strategy' | 'Risk' | 'Scenarios' | 'Red Team';
+  mode?: 'Strategy' | 'Risk' | 'Scenarios' | 'Red Team' | 'Review';
   context?: DecisionContext;
   conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
@@ -246,6 +246,13 @@ export interface DecisionBlueprint {
   };
   language?: string;
   isDemo?: boolean;
+  // Review Mode
+  isReviewMode?: boolean;
+  milestoneTable?: MilestoneMetric[];
+  verdictAccuracy?: number; // 0-100: was the verdict directionally correct?
+  // System-level accuracy (populated per-response from historical outcomes)
+  decisionAccuracy?: number;
+  calibrationScore?: number;
   // Enterprise features
   council?: CouncilMetrics;
   riskMap?: { opportunity: number; risk: number };
@@ -281,21 +288,34 @@ export interface SolveResponse {
   calibrationOffset?: number;
   calibrationSampleSize?: number;
   calibrationConfidence?: 'high' | 'medium' | 'low' | 'none';
+  decisionAccuracy?: number;
+  calibrationScore?: number;
 }
 
 export interface DecisionOutcome {
   decisionId: string;
   actualOutcome: string;
   scoreAccuracy: number; // How accurate was the score? 0-100
+  verdictAccuracy?: number; // 0-100: was the verdict CLASS directionally correct?
   timestamp: string;
   lessons: string[];
   recommendations: string[];
 }
 
 export interface PendingReview {
-  reviewType: '7day' | '30day';
+  reviewType: '30day' | '60day' | '90day';
   scheduledFor: string; // ISO date string
   createdAt: string;
+}
+
+export type MilestoneStatus = 'on_track' | 'behind' | 'exceeded' | 'failed' | 'unknown';
+
+export interface MilestoneMetric {
+  horizon: '30 days' | '60 days' | '90 days';
+  milestone: string;
+  status: MilestoneStatus;
+  metric: string;
+  evidence: string;
 }
 
 export interface DecisionMemoryEntry {

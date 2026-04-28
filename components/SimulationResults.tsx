@@ -48,6 +48,8 @@ interface SimulationResultsProps {
   calibrationOffset?: number;
   calibrationSampleSize?: number;
   decisionId?: string;
+  decisionAccuracy?: number;
+  calibrationScore?: number;
 }
 
 type TabId = 'blueprint' | 'warroom' | 'debate' | 'action' | 'memory' | 'enterprise';
@@ -64,6 +66,8 @@ function SimulationResults({
   calibrationOffset,
   calibrationSampleSize,
   decisionId,
+  decisionAccuracy,
+  calibrationScore,
 }: SimulationResultsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('blueprint');
   const [showBoard, setShowBoard] = useState(initialShowBoard);
@@ -526,7 +530,7 @@ function SimulationResults({
 
         {activeTab === 'blueprint' && (
           <div className="w-full flex flex-col items-center">
-            <DecisionBlueprintBoard data={result} t={t} />
+            <DecisionBlueprintBoard data={result} t={t} decisionAccuracy={decisionAccuracy} calibrationScore={calibrationScore} />
           </div>
         )}
 

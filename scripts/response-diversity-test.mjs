@@ -307,4 +307,108 @@ if (uniqueAdversarialClasses.size !== adversarialThread.length) {
   );
 }
 
+// ─── Review mode trigger detection ───────────────────────────────────────────
+
+const REVIEW_TRIGGERS_LOCAL = [
+  '30 day review', '60 day review', '90 day review',
+  '30-day review', '60-day review', '90-day review',
+  'revisit', 'looking back', 'how did it go', 'how did this go',
+  'what happened after', 'update on the decision', 'decision review',
+  'after 30 days', 'after 60 days', 'after 90 days',
+  'months later', 'weeks later', 'outcome review',
+  'post-decision', 'post decision', 'check in on',
+  'scorecard', 'kill criteria', 'success metrics', 'success criteria',
+  'was a mistake', 'was the right call', 'was it the right', 'was this the right',
+  'define milestones', 'milestone review', 'milestone scorecard',
+  'prove the raise', 'prove it was', 'prove this was', 'would prove',
+  'review in 30', 'review in 60', 'review in 90',
+  'revisit in 30', 'revisit in 60', 'revisit in 90',
+];
+
+function isReviewModeLocal(problem) {
+  const text = problem.toLowerCase();
+  return REVIEW_TRIGGERS_LOCAL.some((t) => text.includes(t));
+}
+
+const reviewPositives = [
+  // Original triggers
+  '30-day review of the fundraising decision',
+  '90 day review: how did it go?',
+  'Revisit: should I have quit my job?',
+  'Looking back after 60 days — what happened after the pivot?',
+  'Post-decision check in on the hiring freeze',
+  // Three failing prompts from bug report
+  'Revisit this decision in 90 days and define success metrics.',
+  'What milestones would prove the raise was a mistake?',
+  'Give me a 30-day review scorecard with kill criteria.',
+];
+for (const q of reviewPositives) {
+  if (!isReviewModeLocal(q)) {
+    throw new Error(`Review trigger not detected for: "${q}"`);
+  }
+}
+
+const reviewNegatives = [
+  'Should I raise venture capital right now?',
+  'Should I quit my job and go all-in on my startup?',
+  'Under what conditions should I hire a VP of Sales?',
+];
+for (const q of reviewNegatives) {
+  if (isReviewModeLocal(q)) {
+    throw new Error(`Review trigger falsely fired for: "${q}"`);
+  }
+}
+
+// ─── computeVerdictAccuracy tests ─────────────────────────────────────────────
+
+function computeVerdictAccuracyLocal(originalVerdict, outcomeAccuracy) {
+  const verdictClass = extractVerdictClassLocal(originalVerdict);
+  if (verdictClass === 'Full Commit') {
+    if (outcomeAccuracy >= 70) return 100;
+    if (outcomeAccuracy >= 50) return 60;
+    return 20;
+  }
+  if (verdictClass === 'Kill The Idea') {
+    if (outcomeAccuracy <= 30) return 100;
+    if (outcomeAccuracy <= 50) return 60;
+    return 20;
+  }
+  if (verdictClass === 'Delay') {
+    if (outcomeAccuracy >= 40 && outcomeAccuracy <= 75) return 100;
+    if (outcomeAccuracy > 75) return 70;
+    return 30;
+  }
+  if (verdictClass === 'Reversible Experiment') {
+    if (outcomeAccuracy >= 50) return 90;
+    if (outcomeAccuracy >= 30) return 60;
+    return 30;
+  }
+  return 50;
+}
+
+// Full Commit: high outcome accuracy → 100
+if (computeVerdictAccuracyLocal('Full Commit: proceed aggressively', 80) !== 100) {
+  throw new Error('computeVerdictAccuracy: Full Commit at 80 should be 100');
+}
+// Full Commit: low outcome accuracy → 20
+if (computeVerdictAccuracyLocal('Full Commit: proceed aggressively', 30) !== 20) {
+  throw new Error('computeVerdictAccuracy: Full Commit at 30 should be 20');
+}
+// Kill The Idea: outcome was bad (low accuracy) → 100 (correct verdict)
+if (computeVerdictAccuracyLocal('Kill The Idea: shut it down', 20) !== 100) {
+  throw new Error('computeVerdictAccuracy: Kill The Idea at 20 should be 100');
+}
+// Kill The Idea: outcome was good (high accuracy) → 20 (wrong verdict)
+if (computeVerdictAccuracyLocal('Kill The Idea: shut it down', 80) !== 20) {
+  throw new Error('computeVerdictAccuracy: Kill The Idea at 80 should be 20');
+}
+// Delay: outcome in [40,75] range → 100
+if (computeVerdictAccuracyLocal('Delay: wait for better evidence', 60) !== 100) {
+  throw new Error('computeVerdictAccuracy: Delay at 60 should be 100');
+}
+// Reversible Experiment: outcome >= 50 → 90
+if (computeVerdictAccuracyLocal('Reversible Experiment: run a small test', 75) !== 90) {
+  throw new Error('computeVerdictAccuracy: Reversible Experiment at 75 should be 90');
+}
+
 console.log('Response diversity test passed.');

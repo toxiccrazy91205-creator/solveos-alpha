@@ -1,10 +1,11 @@
 import { StateGraph, START, END } from '@langchain/langgraph';
 import OpenAI from 'openai';
-import { 
-  buildStrategistPrompt, 
-  buildSkepticPrompt, 
-  buildOperatorPrompt, 
+import {
+  buildStrategistPrompt,
+  buildSkepticPrompt,
+  buildOperatorPrompt,
   buildSynthesizerPrompt,
+  buildReviewSynthesizerPrompt,
   buildModeSystemPrompt,
 } from './prompts';
 import { DecisionBlueprint, CouncilMetrics, ScenarioBranch } from './types';
@@ -266,16 +267,27 @@ async function operatorNode(state: AgentState): Promise<Partial<AgentState>> {
 async function synthesizerNode(state: AgentState): Promise<Partial<AgentState>> {
   const language = normalizeLanguage(state.language);
   const systemPrompt = buildModeSystemPrompt(state.mode);
-  const basePrompt = buildSynthesizerPrompt(
-    state.problem || '',
-    state.strategistAnalysis || '',
-    state.skepticAnalysis || '',
-    state.operatorAnalysis || '',
-    language,
-    state.memoryContext || undefined,
-    state.conversationContext || undefined,
-    state.mode || 'Strategy'
-  );
+  const isReview = state.mode === 'Review';
+  const basePrompt = isReview
+    ? buildReviewSynthesizerPrompt(
+        state.problem || '',
+        state.strategistAnalysis || '',
+        state.skepticAnalysis || '',
+        state.operatorAnalysis || '',
+        language,
+        state.memoryContext || undefined,
+        state.conversationContext || undefined,
+      )
+    : buildSynthesizerPrompt(
+        state.problem || '',
+        state.strategistAnalysis || '',
+        state.skepticAnalysis || '',
+        state.operatorAnalysis || '',
+        language,
+        state.memoryContext || undefined,
+        state.conversationContext || undefined,
+        state.mode || 'Strategy',
+      );
 
   const createBlueprint = async (prompt: string) => {
     logPrompt(`synthesizer:${state.mode}`, `${systemPrompt}\n\n${prompt}`);
@@ -294,7 +306,23 @@ async function synthesizerNode(state: AgentState): Promise<Partial<AgentState>> 
   };
 
   let blueprint = await createBlueprint(basePrompt);
-  if (shouldRejectDecisionOutput(state.problem || '', blueprintOutputText(blueprint))) {
+
+  if (isReview) {
+    // Enforce: review output must NOT contain a verdict class in the recommendation field.
+    const rec = String(blueprint.recommendation || '');
+    const hasVerdictClass = ['Full Commit', 'Reversible Experiment', 'Delay', 'Kill The Idea']
+      .some(cls => rec.includes(cls));
+    const hasMilestoneTable = Array.isArray(blueprint.milestoneTable) && blueprint.milestoneTable.length > 0;
+    if (hasVerdictClass || !hasMilestoneTable) {
+      blueprint = await createBlueprint(`${basePrompt}
+
+REGENERATE ONCE:
+Your prior response violated REVIEW MODE rules.
+${hasVerdictClass ? 'The recommendation field MUST NOT contain "Full Commit", "Reversible Experiment", "Delay", or "Kill The Idea". It MUST start with "Review:".' : ''}
+${!hasMilestoneTable ? 'The milestoneTable array was missing or empty. You MUST return milestoneTable with exactly 3 rows: 30 days, 60 days, 90 days.' : ''}
+Return ONLY the JSON object. No verdict classes anywhere.`);
+    }
+  } else if (shouldRejectDecisionOutput(state.problem || '', blueprintOutputText(blueprint))) {
     blueprint = await createBlueprint(`${basePrompt}
 
 REGENERATE ONCE:
@@ -307,18 +335,28 @@ Never output the old repeated generic verdict or any "measured/phased/balanced" 
   }
 
   blueprint.language = language;
-  
+  if (isReview) {
+    blueprint.isReviewMode = true;
+    // Final safety: if recommendation still contains a verdict class after retry, replace it.
+    const finalRec = String(blueprint.recommendation || '');
+    const stillHasVerdict = ['Full Commit', 'Reversible Experiment', 'Delay', 'Kill The Idea']
+      .some(cls => finalRec.includes(cls));
+    if (stillHasVerdict || !finalRec.startsWith('Review:')) {
+      blueprint.recommendation = 'Review: Milestone assessment — see scorecard below for 30/60/90-day checkpoint analysis.';
+    }
+  }
+
   // Add enterprise features
   const council = calculateCouncilMetrics(
     state.strategistAnalysis,
     state.skepticAnalysis,
     state.operatorAnalysis
   );
-  
+
   blueprint.council = council;
   blueprint.score = Math.min(100, Math.max(0, Number(blueprint.confidenceScore ?? blueprint.score) || 68));
   blueprint.confidenceScore = blueprint.score;
-  if (shouldRejectDecisionOutput(state.problem || '', blueprintOutputText(blueprint))) {
+  if (!isReview && shouldRejectDecisionOutput(state.problem || '', blueprintOutputText(blueprint))) {
     blueprint.recommendation = semanticVerdictForQuestion(state.problem || '', state.mode);
   }
   blueprint.scenarioBranches = generateScenarioBranches(blueprint.score);

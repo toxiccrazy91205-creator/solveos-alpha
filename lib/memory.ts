@@ -96,7 +96,8 @@ function normalizeHistoryEntry(value: unknown): DecisionMemoryEntry | null {
     const pending = value.pendingReview;
     if (
       isRecord(pending) &&
-      (pending.reviewType === '7day' || pending.reviewType === '30day') &&
+      (pending.reviewType === '7day' || pending.reviewType === '30day' ||
+       pending.reviewType === '60day' || pending.reviewType === '90day') &&
       isValidDateString(pending.scheduledFor) &&
       isValidDateString(pending.createdAt)
     ) {
@@ -217,7 +218,7 @@ export async function scheduleReview(
       return { ok: false, reason: 'review_conflict' };
     }
 
-    const daysOut = reviewType === '7day' ? 7 : 30;
+    const daysOut = reviewType === '30day' ? 30 : reviewType === '60day' ? 60 : 90;
     const now = new Date().toISOString();
     entry.pendingReview = {
       reviewType,

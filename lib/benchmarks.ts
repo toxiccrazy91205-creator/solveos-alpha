@@ -469,6 +469,66 @@ export function buildCalibrationContext(
   return lines.join('\n');
 }
 
+// ─── Decision Accuracy + Calibration Score ────────────────────────────────────
+
+function verdictAccuracyScore(recommendation: string, outcomeAccuracy: number): number {
+  const text = recommendation.toLowerCase();
+  const verdictClass =
+    text.startsWith('full commit') ? 'Full Commit' :
+    text.startsWith('kill the idea') ? 'Kill The Idea' :
+    text.startsWith('delay') ? 'Delay' :
+    text.startsWith('reversible experiment') ? 'Reversible Experiment' : '';
+
+  if (verdictClass === 'Full Commit') {
+    if (outcomeAccuracy >= 70) return 100;
+    if (outcomeAccuracy >= 50) return 60;
+    return 20;
+  }
+  if (verdictClass === 'Kill The Idea') {
+    if (outcomeAccuracy <= 30) return 100;
+    if (outcomeAccuracy <= 50) return 60;
+    return 20;
+  }
+  if (verdictClass === 'Delay') {
+    if (outcomeAccuracy >= 40 && outcomeAccuracy <= 75) return 100;
+    if (outcomeAccuracy > 75) return 70;
+    return 30;
+  }
+  if (verdictClass === 'Reversible Experiment') {
+    if (outcomeAccuracy >= 50) return 90;
+    if (outcomeAccuracy >= 30) return 60;
+    return 30;
+  }
+  return 50;
+}
+
+/**
+ * Percentage of historical verdicts that were directionally correct, 0–100.
+ * Requires at least one real outcome to produce a non-zero result.
+ */
+export function computeDecisionAccuracy(history: DecisionMemoryEntry[]): number {
+  const real = learningEntries(history);
+  const withOutcomes = real.filter(e => e.outcome && e.blueprint.recommendation);
+  if (withOutcomes.length === 0) return 0;
+  const scores = withOutcomes.map(e =>
+    verdictAccuracyScore(e.blueprint.recommendation || '', e.outcome!.scoreAccuracy)
+  );
+  return Math.round(avg(scores));
+}
+
+/**
+ * Calibration Score (0–100). 100 = perfect prediction, 0 = wildly miscalibrated.
+ * Derived from average absolute calibration offset across buckets with data.
+ */
+export function computeCalibrationScore(history: DecisionMemoryEntry[]): number {
+  const real = learningEntries(history);
+  const buckets = computeCalibrationBuckets(real);
+  const withData = buckets.filter(b => b.sampleCount >= 1 && b.avgActual >= 0);
+  if (withData.length === 0) return 0;
+  const drift = avg(withData.map(b => Math.abs(b.offset)));
+  return Math.max(0, Math.round(100 - drift * 2));
+}
+
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
 function avg(nums: number[]): number {

@@ -1,16 +1,26 @@
 "use client";
 
 import { useState } from 'react';
-import { Shield, Zap, CheckCircle, TrendingUp, AlertOctagon, Flame } from 'lucide-react';
+import { Shield, Zap, CheckCircle, TrendingUp, AlertOctagon, Flame, Target, BarChart3 } from 'lucide-react';
 
-import type { DecisionBlueprint } from '../lib/types';
+import type { DecisionBlueprint, MilestoneStatus } from '../lib/types';
 
 interface DecisionBlueprintProps {
   data: DecisionBlueprint;
   t: Record<string, string>;
+  decisionAccuracy?: number;
+  calibrationScore?: number;
 }
 
-export default function DecisionBlueprint({ data, t }: DecisionBlueprintProps) {
+const MILESTONE_STATUS_STYLES: Record<MilestoneStatus, { badge: string; dot: string }> = {
+  on_track:  { badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20', dot: 'bg-emerald-400' },
+  exceeded:  { badge: 'bg-blue-500/10 text-blue-300 border-blue-500/20',         dot: 'bg-blue-400' },
+  behind:    { badge: 'bg-amber-500/10 text-amber-300 border-amber-500/20',       dot: 'bg-amber-400' },
+  failed:    { badge: 'bg-rose-500/10 text-rose-300 border-rose-500/20',          dot: 'bg-rose-400' },
+  unknown:   { badge: 'bg-slate-500/10 text-slate-400 border-slate-500/20',       dot: 'bg-slate-500' },
+};
+
+export default function DecisionBlueprint({ data, t, decisionAccuracy, calibrationScore }: DecisionBlueprintProps) {
   const drivers = data?.confidenceDrivers;
   const hasHistoricalAdjustment = !!drivers && drivers.sampleSize > 0;
   const [evidenceOpen, setEvidenceOpen] = useState(false);
@@ -134,6 +144,78 @@ export default function DecisionBlueprint({ data, t }: DecisionBlueprintProps) {
            </div>
         </div>
       </div>
+
+      {/* Review Mode: Milestone Table */}
+      {data?.isReviewMode && data?.milestoneTable && data.milestoneTable.length > 0 && (
+        <div className="glass-note p-8 rounded-[32px] space-y-5">
+          <div className="flex items-center space-x-3">
+            <Target className="w-4 h-4 text-purple-400" />
+            <h3 className="text-xs font-black text-white uppercase tracking-[0.3em]">Milestone Progress</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-[11px]">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="pb-3 pr-4 font-black uppercase tracking-widest text-neutral-600 text-[9px]">Horizon</th>
+                  <th className="pb-3 pr-4 font-black uppercase tracking-widest text-neutral-600 text-[9px]">Milestone</th>
+                  <th className="pb-3 pr-4 font-black uppercase tracking-widest text-neutral-600 text-[9px]">Status</th>
+                  <th className="pb-3 pr-4 font-black uppercase tracking-widest text-neutral-600 text-[9px]">Metric</th>
+                  <th className="pb-3 font-black uppercase tracking-widest text-neutral-600 text-[9px]">Evidence</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {data.milestoneTable.map((row, i) => {
+                  const styles = MILESTONE_STATUS_STYLES[row.status] || MILESTONE_STATUS_STYLES.unknown;
+                  return (
+                    <tr key={i} className="group">
+                      <td className="py-3 pr-4 text-neutral-500 font-mono">{row.horizon}</td>
+                      <td className="py-3 pr-4 text-neutral-200 font-medium leading-snug max-w-[180px]">{row.milestone}</td>
+                      <td className="py-3 pr-4">
+                        <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${styles.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${styles.dot}`} />
+                          <span>{row.status.replace('_', ' ')}</span>
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-neutral-400 max-w-[160px]">{row.metric}</td>
+                      <td className="py-3 text-neutral-500 max-w-[200px] leading-relaxed">{row.evidence}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Decision Accuracy + Calibration Score panels */}
+      {(typeof decisionAccuracy === 'number' || typeof calibrationScore === 'number') && (
+        <div className="grid grid-cols-2 gap-4">
+          {typeof decisionAccuracy === 'number' && (
+            <div className="glass-note p-6 rounded-[24px] flex items-center space-x-4">
+              <BarChart3 className="w-5 h-5 text-purple-400 flex-shrink-0" />
+              <div>
+                <div className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Decision Accuracy</div>
+                <div className="text-2xl font-black text-white tracking-tighter">
+                  {decisionAccuracy}<span className="text-sm text-neutral-600 ml-0.5">%</span>
+                </div>
+                <div className="text-[9px] text-neutral-600 mt-1">Verdict directional correctness</div>
+              </div>
+            </div>
+          )}
+          {typeof calibrationScore === 'number' && (
+            <div className="glass-note p-6 rounded-[24px] flex items-center space-x-4">
+              <TrendingUp className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+              <div>
+                <div className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Calibration Score</div>
+                <div className="text-2xl font-black text-white tracking-tighter">
+                  {calibrationScore}<span className="text-sm text-neutral-600 ml-0.5">/100</span>
+                </div>
+                <div className="text-[9px] text-neutral-600 mt-1">Prediction confidence accuracy</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Diagnosis: Left Column (High Density) */}

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { recordOutcome, getDecisionHistory, scheduleReview } from '@/lib/memory';
+import { computeVerdictAccuracy } from '@/lib/semantic-guards';
 
 export async function POST(req: Request) {
   try {
@@ -13,9 +14,9 @@ export async function POST(req: Request) {
     // ── Schedule a delayed review (outcome is "Too Early / Unknown") ───────────
     if (body.pendingReview) {
       const reviewType = body.pendingReview.reviewType;
-      if (reviewType !== '7day' && reviewType !== '30day') {
+      if (reviewType !== '30day' && reviewType !== '60day' && reviewType !== '90day') {
         return NextResponse.json(
-          { error: 'reviewType must be "7day" or "30day"' },
+          { error: 'reviewType must be "30day", "60day", or "90day"' },
           { status: 400 }
         );
       }
@@ -49,9 +50,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Look up the original recommendation to compute verdict accuracy.
+    const history = await getDecisionHistory();
+    const existing = history.find(e => e.id === decisionId);
+    const originalRecommendation = existing?.blueprint?.recommendation || '';
+    const verdictAccuracy = originalRecommendation
+      ? computeVerdictAccuracy(originalRecommendation, outcome.scoreAccuracy)
+      : undefined;
+
     const result = await recordOutcome(decisionId, {
       actualOutcome: outcome.actualOutcome,
       scoreAccuracy: outcome.scoreAccuracy,
+      verdictAccuracy,
       lessons: Array.isArray(outcome.lessons) ? outcome.lessons : [],
       recommendations: Array.isArray(outcome.recommendations) ? outcome.recommendations : [],
     });
