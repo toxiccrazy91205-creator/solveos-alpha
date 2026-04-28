@@ -103,10 +103,10 @@ function SimulationResults({
                       ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
                       : 'text-blue-400 bg-blue-500/10 border-blue-500/20'
                   }`}
-                  title={`Confidence adjusted ${calibrationOffset! > 0 ? 'up' : 'down'} ${Math.abs(calibrationOffset!)} points from ${calibrationSampleSize ?? '?'} historical outcome${calibrationSampleSize !== 1 ? 's' : ''}`}
+                  title={`Adjusted by prior outcomes: confidence moved ${calibrationOffset! > 0 ? 'up' : 'down'} ${Math.abs(calibrationOffset!)} points from ${calibrationSampleSize ?? '?'} similar outcome${calibrationSampleSize !== 1 ? 's' : ''}`}
                 >
                   <Activity className="w-2.5 h-2.5" />
-                  Adjusted from {calibrationSampleSize ?? '?'} outcome{calibrationSampleSize !== 1 ? 's' : ''} · {calibratedScore} ({calibrationOffset! > 0 ? '+' : ''}{calibrationOffset})
+                  Adjusted by prior outcomes · {calibratedScore} ({calibrationOffset! > 0 ? '+' : ''}{calibrationOffset})
                 </span>
               )}
             </div>

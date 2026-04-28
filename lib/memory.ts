@@ -1,11 +1,29 @@
 import fs from 'fs/promises';
+import { existsSync } from 'fs';
 import path from 'path';
 import { DecisionMemoryEntry, DecisionOutcome, DecisionContext, MemoryGraph, MemoryIntelligence, PendingReview } from './types';
 import { buildMemoryGraph, getMemoryIntelligenceFromHistory } from './memory-graph';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+function findProjectRoot(startDir: string): string {
+  let dir = startDir;
+  while (true) {
+    if (existsSync(path.join(dir, 'package.json'))) {
+      return dir;
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) return process.cwd();
+    dir = parent;
+  }
+}
+
+const PROJECT_ROOT = findProjectRoot(process.cwd());
+const DATA_DIR = path.join(PROJECT_ROOT, 'data');
 const MEMORY_FILE = path.join(DATA_DIR, 'decisions.json');
 const TMP_FILE = MEMORY_FILE + '.tmp';
+const REVIEW_EXPIRY_DAYS = 90;
+
+let memoryWriteQueue: Promise<void> = Promise.resolve();
 
 async function ensureDataDir() {
   await fs.mkdir(DATA_DIR, { recursive: true });
@@ -18,6 +36,118 @@ async function writeHistory(history: DecisionMemoryEntry[]): Promise<void> {
   const serialised = JSON.stringify(history, null, 2);
   await fs.writeFile(TMP_FILE, serialised, 'utf-8');
   await fs.rename(TMP_FILE, MEMORY_FILE);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function clampScore(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function isValidDateString(value: unknown): value is string {
+  return typeof value === 'string' && Number.isFinite(new Date(value).getTime());
+}
+
+function isPendingReviewExpired(
+  pendingReview: PendingReview,
+  now = Date.now()
+): boolean {
+  const scheduledFor = new Date(pendingReview.scheduledFor).getTime();
+  if (!Number.isFinite(scheduledFor)) return true;
+  return scheduledFor < now - REVIEW_EXPIRY_DAYS * 86_400_000;
+}
+
+function normalizeHistoryEntry(value: unknown): DecisionMemoryEntry | null {
+  if (!isRecord(value)) return null;
+
+  const blueprint = value.blueprint;
+  if (
+    typeof value.id !== 'string' ||
+    typeof value.problem !== 'string' ||
+    !isValidDateString(value.timestamp) ||
+    !isRecord(blueprint) ||
+    !isFiniteNumber(blueprint.score)
+  ) {
+    return null;
+  }
+
+  const entry = value as unknown as DecisionMemoryEntry;
+  const tags = Array.isArray(value.tags)
+    ? value.tags.filter((tag): tag is string => typeof tag === 'string')
+    : extractTags(entry.problem, entry.context);
+
+  const normalized: DecisionMemoryEntry = {
+    ...entry,
+    blueprint: {
+      ...entry.blueprint,
+      score: clampScore(entry.blueprint.score),
+    },
+    tags,
+  };
+
+  if (value.outcome) {
+    const outcome = value.outcome;
+    if (
+      isRecord(outcome) &&
+      typeof outcome.actualOutcome === 'string' &&
+      isFiniteNumber(outcome.scoreAccuracy) &&
+      isValidDateString(outcome.timestamp)
+    ) {
+      normalized.outcome = {
+        decisionId: typeof outcome.decisionId === 'string' ? outcome.decisionId : normalized.id,
+        actualOutcome: outcome.actualOutcome,
+        scoreAccuracy: clampScore(outcome.scoreAccuracy),
+        timestamp: outcome.timestamp,
+        lessons: Array.isArray(outcome.lessons)
+          ? outcome.lessons.filter((lesson): lesson is string => typeof lesson === 'string')
+          : [],
+        recommendations: Array.isArray(outcome.recommendations)
+          ? outcome.recommendations.filter((rec): rec is string => typeof rec === 'string')
+          : [],
+      };
+    } else {
+      delete normalized.outcome;
+    }
+  }
+
+  if (value.pendingReview && !normalized.outcome) {
+    const pending = value.pendingReview;
+    if (
+      isRecord(pending) &&
+      (pending.reviewType === '7day' || pending.reviewType === '30day') &&
+      isValidDateString(pending.scheduledFor) &&
+      isValidDateString(pending.createdAt)
+    ) {
+      normalized.pendingReview = pending as unknown as PendingReview;
+    } else {
+      delete normalized.pendingReview;
+    }
+  } else {
+    delete normalized.pendingReview;
+  }
+
+  return normalized;
+}
+
+async function withMemoryWrite<T>(mutate: (history: DecisionMemoryEntry[]) => Promise<T>): Promise<T> {
+  const previous = memoryWriteQueue;
+  let release!: () => void;
+  memoryWriteQueue = new Promise<void>(resolve => {
+    release = resolve;
+  });
+
+  await previous;
+  try {
+    return await mutate(await readHistory());
+  } finally {
+    release();
+  }
 }
 
 /**
@@ -35,7 +165,18 @@ async function readHistory(): Promise<DecisionMemoryEntry[]> {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) throw new Error('not an array');
-    return parsed as DecisionMemoryEntry[];
+    const normalized = parsed
+      .map(normalizeHistoryEntry)
+      .filter((entry): entry is DecisionMemoryEntry => entry !== null);
+    if (parsed.length > 0 && normalized.length === 0) {
+      throw new Error('no valid decision entries');
+    }
+    if (normalized.length !== parsed.length) {
+      console.warn(
+        `[memory] ignored ${parsed.length - normalized.length} invalid decision entr${parsed.length - normalized.length === 1 ? 'y' : 'ies'} from decisions.json`
+      );
+    }
+    return normalized;
   } catch {
     const corruptPath = MEMORY_FILE + '.corrupt.' + Date.now();
     await fs.rename(MEMORY_FILE, corruptPath).catch(() => undefined);
@@ -51,19 +192,24 @@ export async function saveDecision(
   entry: Omit<DecisionMemoryEntry, 'id' | 'timestamp' | 'tags' | 'similarity'>
 ) {
   await ensureDataDir();
-  const history = await readHistory();
-  const tags = extractTags(entry.problem, entry.context);
+  return withMemoryWrite(async history => {
+    const tags = extractTags(entry.problem, entry.context);
 
-  const newEntry: DecisionMemoryEntry = {
-    ...entry,
-    id: Math.random().toString(36).substring(2, 9),
-    timestamp: new Date().toISOString(),
-    tags,
-  };
+    const newEntry: DecisionMemoryEntry = {
+      ...entry,
+      blueprint: {
+        ...entry.blueprint,
+        score: clampScore(entry.blueprint.score),
+      },
+      id: Math.random().toString(36).substring(2, 9),
+      timestamp: new Date().toISOString(),
+      tags,
+    };
 
-  history.unshift(newEntry);
-  await writeHistory(history);
-  return newEntry;
+    history.unshift(newEntry);
+    await writeHistory(history);
+    return newEntry;
+  });
 }
 
 /**
@@ -75,24 +221,34 @@ export async function saveDecision(
 export async function recordOutcome(
   decisionId: string,
   outcome: Omit<DecisionOutcome, 'decisionId' | 'timestamp'>
-): Promise<{ ok: true; entry: DecisionMemoryEntry } | { ok: false; reason: 'not_found' | 'already_logged' }> {
+): Promise<{ ok: true; entry: DecisionMemoryEntry } | { ok: false; reason: 'not_found' | 'already_logged' | 'invalid_outcome' }> {
   await ensureDataDir();
-  const history = await readHistory();
+  return withMemoryWrite(async history => {
+    const entry = history.find(e => e.id === decisionId);
+    if (!entry) return { ok: false, reason: 'not_found' };
+    if (entry.outcome) return { ok: false, reason: 'already_logged' };
+    if (
+      typeof outcome.actualOutcome !== 'string' ||
+      !outcome.actualOutcome.trim() ||
+      !isFiniteNumber(outcome.scoreAccuracy)
+    ) {
+      return { ok: false, reason: 'invalid_outcome' };
+    }
 
-  const entry = history.find(e => e.id === decisionId);
-  if (!entry) return { ok: false, reason: 'not_found' };
-  if (entry.outcome) return { ok: false, reason: 'already_logged' };
+    entry.outcome = {
+      actualOutcome: outcome.actualOutcome.trim(),
+      scoreAccuracy: clampScore(outcome.scoreAccuracy),
+      lessons: Array.isArray(outcome.lessons) ? outcome.lessons.filter(Boolean) : [],
+      recommendations: Array.isArray(outcome.recommendations) ? outcome.recommendations.filter(Boolean) : [],
+      decisionId,
+      timestamp: new Date().toISOString(),
+    };
+    // Clear any pending review now that the outcome is logged.
+    delete entry.pendingReview;
 
-  entry.outcome = {
-    ...outcome,
-    decisionId,
-    timestamp: new Date().toISOString(),
-  };
-  // Clear any pending review now that the outcome is logged
-  delete entry.pendingReview;
-
-  await writeHistory(history);
-  return { ok: true, entry };
+    await writeHistory(history);
+    return { ok: true, entry };
+  });
 }
 
 /**
@@ -103,24 +259,32 @@ export async function recordOutcome(
 export async function scheduleReview(
   decisionId: string,
   reviewType: PendingReview['reviewType']
-): Promise<{ ok: true; entry: DecisionMemoryEntry } | { ok: false; reason: 'not_found' | 'already_logged' }> {
+): Promise<{ ok: true; entry: DecisionMemoryEntry } | { ok: false; reason: 'not_found' | 'already_logged' | 'review_conflict' }> {
   await ensureDataDir();
-  const history = await readHistory();
+  return withMemoryWrite(async history => {
+    const entry = history.find(e => e.id === decisionId);
+    if (!entry) return { ok: false, reason: 'not_found' };
+    // Cannot schedule a review after outcome is already recorded.
+    if (entry.outcome) return { ok: false, reason: 'already_logged' };
+    if (
+      entry.pendingReview &&
+      !isPendingReviewExpired(entry.pendingReview) &&
+      entry.pendingReview.reviewType !== reviewType
+    ) {
+      return { ok: false, reason: 'review_conflict' };
+    }
 
-  const entry = history.find(e => e.id === decisionId);
-  if (!entry) return { ok: false, reason: 'not_found' };
-  // Cannot schedule a review after outcome is already recorded
-  if (entry.outcome) return { ok: false, reason: 'already_logged' };
+    const daysOut = reviewType === '7day' ? 7 : 30;
+    const now = new Date().toISOString();
+    entry.pendingReview = {
+      reviewType,
+      scheduledFor: new Date(Date.now() + daysOut * 86_400_000).toISOString(),
+      createdAt: entry.pendingReview?.reviewType === reviewType ? entry.pendingReview.createdAt : now,
+    };
 
-  const daysOut = reviewType === '7day' ? 7 : 30;
-  entry.pendingReview = {
-    reviewType,
-    scheduledFor: new Date(Date.now() + daysOut * 86_400_000).toISOString(),
-    createdAt: new Date().toISOString(),
-  };
-
-  await writeHistory(history);
-  return { ok: true, entry };
+    await writeHistory(history);
+    return { ok: true, entry };
+  });
 }
 
 /**
@@ -130,14 +294,14 @@ export async function scheduleReview(
  */
 export async function getDueReviews(): Promise<DecisionMemoryEntry[]> {
   const history = await getDecisionHistory();
-  const now = new Date().toISOString();
-  const expiryDate = new Date(Date.now() - 90 * 86_400_000).toISOString();
+  const now = Date.now();
   return history.filter(
-    e =>
-      e.pendingReview &&
-      !e.outcome &&
-      e.pendingReview.scheduledFor <= now &&
-      e.pendingReview.scheduledFor >= expiryDate
+    e => {
+      if (!e.pendingReview || e.outcome || isPendingReviewExpired(e.pendingReview, now)) {
+        return false;
+      }
+      return new Date(e.pendingReview.scheduledFor).getTime() <= now;
+    }
   );
 }
 
@@ -146,7 +310,8 @@ export async function getDueReviews(): Promise<DecisionMemoryEntry[]> {
  */
 export async function getPendingReviews(): Promise<DecisionMemoryEntry[]> {
   const history = await getDecisionHistory();
-  return history.filter(e => e.pendingReview && !e.outcome);
+  const now = Date.now();
+  return history.filter(e => e.pendingReview && !e.outcome && !isPendingReviewExpired(e.pendingReview, now));
 }
 
 /**

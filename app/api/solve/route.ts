@@ -64,7 +64,16 @@ export async function POST(req: Request) {
 
     // Calibrate the raw confidence score against historical outcomes
     // Re-read history after potential updates — but use the pre-run snapshot for calibration
-    const calibration = calibrateScore(blueprint.score, history, domain);
+    const calibration = calibrateScore(blueprint.score, history, domain, problem, body.context);
+    if (calibration.offset !== 0) {
+      blueprint.score = calibration.calibratedScore;
+      if (blueprint.riskMap) {
+        blueprint.riskMap = {
+          ...blueprint.riskMap,
+          opportunity: calibration.calibratedScore,
+        };
+      }
+    }
 
     // Persist to memory
     const saved = await saveDecision({ problem, blueprint, context: body.context });

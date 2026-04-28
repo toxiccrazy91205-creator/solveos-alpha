@@ -52,7 +52,7 @@ function PendingReviewCard({
   const log = async (outcome: ReviewOutcome) => {
     setSubmitting(true);
     try {
-      await fetch('/api/outcomes', {
+      const res = await fetch('/api/outcomes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,6 +65,7 @@ function PendingReviewCard({
           },
         }),
       });
+      if (!res.ok) throw new Error('Failed to log review outcome');
       setDone(true);
       setTimeout(() => onLogged(review.id), 600);
     } catch {

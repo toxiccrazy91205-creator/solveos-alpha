@@ -120,9 +120,15 @@ export function detectPatterns(history: DecisionMemoryEntry[]): StrategicPattern
       withOutcomes.length > 0
         ? withOutcomes.reduce((s, d) => s + (d.outcome?.scoreAccuracy || 0), 0) /
           withOutcomes.length
-        : 0;
+        : -1;
     const signal: StrategicPattern['signal'] =
-      avgScore > 70 ? 'positive' : avgScore < 40 ? 'negative' : 'neutral';
+      withOutcomes.length >= 2
+        ? avgAccuracy >= avgScore - 5
+          ? 'positive'
+          : avgAccuracy < avgScore - 15
+          ? 'negative'
+          : 'neutral'
+        : 'neutral';
     const domainLabel = domain.charAt(0).toUpperCase() + domain.slice(1);
 
     patterns.push({
@@ -131,15 +137,17 @@ export function detectPatterns(history: DecisionMemoryEntry[]): StrategicPattern
       description: `${decisions.length} decisions in the ${domain} domain`,
       frequency: decisions.length,
       avgScore: Math.round(avgScore),
-      avgOutcomeAccuracy: Math.round(avgAccuracy),
+      avgOutcomeAccuracy: avgAccuracy >= 0 ? Math.round(avgAccuracy) : -1,
       decisionIds: decisions.map(d => d.id),
       signal,
       lesson:
         signal === 'positive'
           ? `Strong track record in ${domain} decisions. Domain expertise is compounding.`
           : signal === 'negative'
-          ? `Consistently low confidence in ${domain}. Consider external expertise before deciding.`
-          : `Mixed track record in ${domain}. Validate core assumptions before committing.`,
+          ? `${domainLabel} outcomes are underperforming confidence. Validate core assumptions before committing.`
+          : withOutcomes.length > 0
+          ? `Sparse ${domain} outcome data. Record more outcomes before treating this as a pattern.`
+          : `No ${domain} outcomes recorded yet. This is a cluster, not a performance signal.`,
       dominantTags: [domain],
     });
   });
@@ -155,8 +163,8 @@ export function detectPatterns(history: DecisionMemoryEntry[]): StrategicPattern
       withOutcomes.length > 0
         ? withOutcomes.reduce((s, d) => s + (d.outcome?.scoreAccuracy || 0), 0) /
           withOutcomes.length
-        : 0;
-    const overconfident = withBadOutcomes.length > highConf.length * 0.3;
+        : -1;
+    const overconfident = withOutcomes.length >= 2 && withBadOutcomes.length > withOutcomes.length * 0.3;
 
     patterns.push({
       id: 'high-confidence-cluster',
@@ -166,12 +174,14 @@ export function detectPatterns(history: DecisionMemoryEntry[]): StrategicPattern
       avgScore: Math.round(
         highConf.reduce((s, d) => s + d.blueprint.score, 0) / highConf.length
       ),
-      avgOutcomeAccuracy: Math.round(avgAccuracy),
+      avgOutcomeAccuracy: avgAccuracy >= 0 ? Math.round(avgAccuracy) : -1,
       decisionIds: highConf.map(d => d.id),
-      signal: overconfident ? 'negative' : 'positive',
+      signal: withOutcomes.length >= 2 ? (overconfident ? 'negative' : 'positive') : 'neutral',
       lesson: overconfident
         ? 'Overconfidence detected: high-confidence calls have underperformed. Stress-test assumptions harder.'
-        : 'High-confidence decisions are tracking well. The confidence calibration is healthy.',
+        : withOutcomes.length >= 2
+        ? 'High-confidence decisions with outcomes are tracking within expected calibration.'
+        : 'High-confidence cluster detected, but outcomes are too sparse to judge calibration.',
       dominantTags: [],
     });
   }
@@ -190,7 +200,7 @@ export function detectPatterns(history: DecisionMemoryEntry[]): StrategicPattern
       avgScore: Math.round(
         recent.reduce((s, d) => s + d.blueprint.score, 0) / recent.length
       ),
-      avgOutcomeAccuracy: 0,
+      avgOutcomeAccuracy: -1,
       decisionIds: recent.map(d => d.id),
       signal: 'neutral',
       lesson:
@@ -278,8 +288,8 @@ function extractLessons(subset: DecisionMemoryEntry[]): string[] {
 // ─── Full Graph ───────────────────────────────────────────────────────────────
 
 export function buildMemoryGraph(history: DecisionMemoryEntry[]): MemoryGraph {
-  // Demo entries are seed data — exclude from all graph computation
-  const real = history.filter(e => !e.blueprint.isDemo);
+  // Demo seeds stay excluded until the user records a real outcome on them.
+  const real = history.filter(e => !e.blueprint.isDemo || e.outcome);
 
   const nodes = buildGraph(real);
   const patterns = detectPatterns(real);
@@ -386,7 +396,7 @@ export function getMemoryIntelligenceFromHistory(
   context?: DecisionContext,
   limit = 3
 ): MemoryIntelligence {
-  const real = history.filter(e => !e.blueprint.isDemo);
+  const real = history.filter(e => !e.blueprint.isDemo || e.outcome);
 
   if (real.length === 0) {
     return {

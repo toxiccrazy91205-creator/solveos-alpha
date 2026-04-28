@@ -1,4 +1,5 @@
 import {
+  DecisionContext,
   DecisionMemoryEntry,
   DomainBenchmark,
   CalibrationBucket,
@@ -24,6 +25,54 @@ function bucketFor(score: number): number {
   return BUCKETS.length - 1;
 }
 
+function learningEntries(history: DecisionMemoryEntry[]): DecisionMemoryEntry[] {
+  return history.filter(e => !e.blueprint.isDemo || e.outcome);
+}
+
+function problemTokens(problem: string): Set<string> {
+  return new Set(
+    problem
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(token => token.length >= 4)
+  );
+}
+
+function similarityScore(
+  entry: DecisionMemoryEntry,
+  problem?: string,
+  domain?: string,
+  context?: DecisionContext
+): number {
+  let score = 0;
+  const entryDomain = entry.context?.domain || inferDomain(entry.tags);
+  const requestedDomain = context?.domain || domain;
+
+  if (requestedDomain && entryDomain === requestedDomain) score += 0.45;
+
+  const contextTags = [
+    requestedDomain,
+    context?.timeHorizon ? `horizon:${context.timeHorizon}` : undefined,
+    ...(context?.stakeholders || []).map(s => `stakeholder:${s}`),
+  ].filter((tag): tag is string => Boolean(tag));
+  if (contextTags.length > 0) {
+    const overlap = contextTags.filter(tag => entry.tags.includes(tag)).length;
+    score += (overlap / contextTags.length) * 0.25;
+  }
+
+  if (problem) {
+    const incoming = problemTokens(problem);
+    const existing = problemTokens(entry.problem);
+    if (incoming.size > 0 && existing.size > 0) {
+      const overlap = [...incoming].filter(token => existing.has(token)).length;
+      score += (overlap / Math.max(incoming.size, existing.size)) * 0.3;
+    }
+  }
+
+  return Math.min(1, score);
+}
+
 // ─── Domain Benchmarks ────────────────────────────────────────────────────────
 
 function computeDomainBenchmarks(history: DecisionMemoryEntry[]): DomainBenchmark[] {
@@ -43,7 +92,9 @@ function computeDomainBenchmarks(history: DecisionMemoryEntry[]): DomainBenchmar
           ? avg(withOutcomes.map(d => d.outcome!.scoreAccuracy))
           : -1;
       const successRate =
-        (decisions.filter(d => d.blueprint.score > 70).length / decisions.length) * 100;
+        withOutcomes.length > 0
+          ? (withOutcomes.filter(d => d.outcome!.scoreAccuracy >= 70).length / withOutcomes.length) * 100
+          : -1;
       const calibrationOffset =
         withOutcomes.length > 0
           ? avg(withOutcomes.map(d => d.outcome!.scoreAccuracy - d.blueprint.score))
@@ -54,7 +105,7 @@ function computeDomainBenchmarks(history: DecisionMemoryEntry[]): DomainBenchmar
         totalDecisions: decisions.length,
         avgConfidence: Math.round(avgConf),
         avgOutcomeAccuracy: avgAcc >= 0 ? Math.round(avgAcc) : -1,
-        successRate: Math.round(successRate),
+        successRate: successRate >= 0 ? Math.round(successRate) : -1,
         calibrationOffset: Math.round(calibrationOffset),
       };
     });
@@ -191,7 +242,7 @@ function deriveTopInsights(
   const insights: string[] = [];
 
   // Domain with highest calibration offset (most overconfident)
-  const withOffset = benchmarks.filter(b => b.avgOutcomeAccuracy >= 0);
+  const withOffset = benchmarks.filter(b => b.avgOutcomeAccuracy >= 0 && b.totalDecisions >= 2);
   if (withOffset.length > 0) {
     const mostOverconf = withOffset.reduce((a, b) =>
       a.calibrationOffset < b.calibrationOffset ? a : b
@@ -227,12 +278,14 @@ function deriveTopInsights(
     );
   } else if (predictionImprovement === 0 && buckets.some(b => b.sampleCount > 0)) {
     insights.push(
-      `Record more outcomes to activate the calibration flywheel and unlock prediction improvement metrics.`
+      `At least four recorded outcomes are needed before prediction improvement is reported.`
     );
   }
 
   // High-confidence domain
-  const highConf = benchmarks.filter(b => b.avgConfidence > 75).sort((a, b) => b.totalDecisions - a.totalDecisions);
+  const highConf = benchmarks
+    .filter(b => b.avgConfidence > 75 && b.totalDecisions >= 2)
+    .sort((a, b) => b.totalDecisions - a.totalDecisions);
   if (highConf.length > 0) {
     insights.push(
       `${capitalize(highConf[0].domain)} is your highest-confidence domain at avg ${highConf[0].avgConfidence}/100 across ${highConf[0].totalDecisions} decision${highConf[0].totalDecisions !== 1 ? 's' : ''}.`
@@ -252,8 +305,8 @@ function deriveTopInsights(
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export function computeNetworkIntelligence(history: DecisionMemoryEntry[]): NetworkIntelligence {
-  // Demo entries are seed data and must not influence analytics
-  const real = history.filter(e => !e.blueprint.isDemo);
+  // Demo seeds do not count unless the user has recorded a real outcome on them.
+  const real = learningEntries(history);
 
   const domainBenchmarks = computeDomainBenchmarks(real);
   const calibrationBuckets = computeCalibrationBuckets(real);
@@ -292,14 +345,21 @@ export function computeNetworkIntelligence(history: DecisionMemoryEntry[]): Netw
 export function calibrateScore(
   rawScore: number,
   history: DecisionMemoryEntry[],
-  domain?: string
+  domain?: string,
+  problem?: string,
+  context?: DecisionContext
 ): CalibrationResult {
-  const real = history.filter(e => !e.blueprint.isDemo);
+  const real = learningEntries(history);
 
   // Prefer domain-specific calibration; fall back to global bucket calibration
   const domainEntries = domain
     ? real.filter(e => e.outcome && (e.context?.domain || inferDomain(e.tags)) === domain)
     : [];
+  const similarEntries = real
+    .filter(e => e.outcome)
+    .map(entry => ({ entry, similarity: similarityScore(entry, problem, domain, context) }))
+    .filter(item => item.similarity >= 0.25)
+    .sort((a, b) => b.similarity - a.similarity);
 
   const bucketIdx = bucketFor(rawScore);
   const [lo, hi] = BUCKETS[bucketIdx];
@@ -307,7 +367,25 @@ export function calibrateScore(
     e => e.outcome && e.blueprint.score >= lo && e.blueprint.score < hi
   );
 
-  // Use domain entries if enough, otherwise fall back to global bucket
+  if (similarEntries.length > 0) {
+    const weightedOffset =
+      similarEntries.reduce(
+        (sum, item) =>
+          sum + (item.entry.outcome!.scoreAccuracy - item.entry.blueprint.score) * item.similarity,
+        0
+      ) / similarEntries.reduce((sum, item) => sum + item.similarity, 0);
+    const cap = similarEntries.length >= 5 ? 30 : similarEntries.length >= 2 ? 20 : 12;
+    const offset = Math.round(Math.min(cap, Math.max(-cap, weightedOffset)));
+    return {
+      calibratedScore: Math.round(Math.min(100, Math.max(0, rawScore + offset))),
+      rawScore,
+      offset,
+      sampleSize: similarEntries.length,
+      confidence: similarEntries.length >= 5 ? 'high' : similarEntries.length >= 2 ? 'medium' : 'low',
+    };
+  }
+
+  // Use domain entries if enough, otherwise fall back to global bucket.
   const entries = domainEntries.length >= 3 ? domainEntries : globalBucketEntries;
 
   // Single-sample adjustments are noise — require at least 2 real outcomes
@@ -337,7 +415,7 @@ export function buildCalibrationContext(
   history: DecisionMemoryEntry[],
   domain?: string
 ): string {
-  const real = history.filter(e => !e.blueprint.isDemo);
+  const real = learningEntries(history);
   const buckets = computeCalibrationBuckets(real);
   const bucketsWithData = buckets.filter(b => b.sampleCount >= 2);
   if (bucketsWithData.length === 0) return '';

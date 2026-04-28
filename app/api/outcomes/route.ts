@@ -25,6 +25,8 @@ export async function POST(req: Request) {
         const error =
           result.reason === 'not_found'
             ? 'Decision not found'
+            : result.reason === 'review_conflict'
+            ? 'A different pending review is already scheduled for this decision'
             : 'Outcome already recorded for this decision';
         return NextResponse.json({ error }, { status });
       }
@@ -32,9 +34,17 @@ export async function POST(req: Request) {
     }
 
     // ── Record an actual outcome ───────────────────────────────────────────────
-    if (!outcome || !outcome.actualOutcome || outcome.scoreAccuracy === undefined) {
+    if (
+      !outcome ||
+      typeof outcome.actualOutcome !== 'string' ||
+      !outcome.actualOutcome.trim() ||
+      typeof outcome.scoreAccuracy !== 'number' ||
+      !Number.isFinite(outcome.scoreAccuracy) ||
+      outcome.scoreAccuracy < 0 ||
+      outcome.scoreAccuracy > 100
+    ) {
       return NextResponse.json(
-        { error: 'outcome with actualOutcome and scoreAccuracy required' },
+        { error: 'outcome with actualOutcome and scoreAccuracy between 0 and 100 required' },
         { status: 400 }
       );
     }
@@ -47,10 +57,12 @@ export async function POST(req: Request) {
     });
 
     if (!result.ok) {
-      const status = result.reason === 'not_found' ? 404 : 409;
+      const status = result.reason === 'not_found' ? 404 : result.reason === 'invalid_outcome' ? 400 : 409;
       const error =
         result.reason === 'not_found'
           ? 'Decision not found'
+          : result.reason === 'invalid_outcome'
+          ? 'Invalid outcome payload'
           : 'Outcome already logged for this decision';
       return NextResponse.json({ error }, { status });
     }

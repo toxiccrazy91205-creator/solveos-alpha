@@ -61,7 +61,7 @@ export interface DomainBenchmark {
   totalDecisions: number;
   avgConfidence: number;
   avgOutcomeAccuracy: number; // -1 when no outcomes recorded
-  successRate: number; // % of decisions with score > 70
+  successRate: number; // % of recorded outcomes at or above 70; -1 when no outcomes recorded
   calibrationOffset: number; // avg(outcomeAccuracy - confidence) — negative = overconfident
 }
 
