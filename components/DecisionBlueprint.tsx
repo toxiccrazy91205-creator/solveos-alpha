@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from 'react';
 import { Shield, Zap, CheckCircle, TrendingUp, AlertOctagon, Flame } from 'lucide-react';
 
 import type { DecisionBlueprint } from '../lib/types';
@@ -8,6 +11,19 @@ interface DecisionBlueprintProps {
 }
 
 export default function DecisionBlueprint({ data, t }: DecisionBlueprintProps) {
+  const drivers = data?.confidenceDrivers;
+  const hasHistoricalAdjustment = !!drivers && drivers.sampleSize > 0;
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const signed = (value: number) => value > 0 ? `+${value}` : String(value);
+  const evidence = drivers?.evidence || [];
+  const hasEvidence = evidence.length > 0;
+  const outcomeLabel = (outcome: string) => {
+    const first = outcome.split(':')[0]?.trim() || outcome;
+    return first.length > 36 ? `${first.slice(0, 36)}...` : first;
+  };
+  const decisionLabel = (problem: string) =>
+    problem.length > 42 ? `${problem.slice(0, 42)}...` : problem;
+
   return (
     <div
       dir={data?.language === 'Arabic' ? 'rtl' : 'ltr'}
@@ -27,6 +43,91 @@ export default function DecisionBlueprint({ data, t }: DecisionBlueprintProps) {
            <div className="flex flex-col items-end">
              <span className="text-[9px] text-neutral-600 uppercase tracking-widest mb-1 font-bold">{t.confidence_score}</span>
              <span className="text-4xl font-black text-white tracking-tighter">{data?.score || 0}<span className="text-lg text-neutral-700 ml-0.5">/100</span></span>
+             <div className="mt-3 w-56 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-right">
+               <div className="mb-2 text-[8px] font-black uppercase tracking-widest text-neutral-500">
+                 Confidence Drivers · Why {data?.score || 0}%?
+               </div>
+               {hasHistoricalAdjustment && drivers ? (
+                 <div className="space-y-1 text-[9px] font-mono text-neutral-400">
+                   <div className="flex justify-between gap-3">
+                     <span>Base confidence</span>
+                     <span className="text-neutral-200">{drivers.baseConfidence}</span>
+                   </div>
+                   <div className="flex justify-between gap-3">
+                     <span>Prior outcomes</span>
+                     <span className={drivers.priorOutcomesAdjustment >= 0 ? 'text-emerald-300' : 'text-amber-300'}>
+                       {signed(drivers.priorOutcomesAdjustment)}
+                     </span>
+                   </div>
+                   <div className="flex justify-between gap-3">
+                     <span>Similar success rate</span>
+                     <button
+                       type="button"
+                       onClick={() => hasEvidence && setEvidenceOpen(open => !open)}
+                       disabled={!hasEvidence}
+                       aria-expanded={evidenceOpen}
+                       className={`text-right ${hasEvidence ? 'text-blue-300 underline decoration-blue-400/40 underline-offset-2 hover:text-blue-200' : 'text-neutral-200'}`}
+                     >
+                       {typeof drivers.similarSuccessRate === 'number' ? `${drivers.similarSuccessRate}%` : '—'}
+                     </button>
+                   </div>
+                   <div className="flex justify-between gap-3">
+                     <span>Risk penalty</span>
+                     <span className={drivers.riskPenalty < 0 ? 'text-amber-300' : 'text-neutral-500'}>
+                       {signed(drivers.riskPenalty)}
+                     </span>
+                   </div>
+                   <div className="mt-2 flex justify-between gap-3 border-t border-white/10 pt-2 font-black text-neutral-200">
+                     <span>Final confidence</span>
+                     <span>{drivers.finalConfidence}</span>
+                   </div>
+                   {evidenceOpen && hasEvidence && (
+                     <div className="mt-3 space-y-3 rounded-xl border border-white/10 bg-black/20 p-3 text-left font-sans">
+                       <div>
+                         <div className="text-[8px] font-black uppercase tracking-widest text-neutral-500">
+                           Based on {evidence.length} related decision{evidence.length !== 1 ? 's' : ''}
+                         </div>
+                         <div className="mt-2 space-y-2">
+                           {evidence.map(item => (
+                             <div key={item.decisionId} className="border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
+                               <div className="text-[10px] font-bold leading-snug text-neutral-300">
+                                 <span className="text-neutral-600">•</span> {decisionLabel(item.problem)} <span className="text-neutral-600">—</span>{' '}
+                                 <span className="text-neutral-200">{outcomeLabel(item.actualOutcome)}</span>
+                               </div>
+                               <div className="mt-1 text-[8px] font-mono text-neutral-500">
+                                 Predicted {item.predictedConfidence} / Actual {item.actualConfidence} /{' '}
+                                 <span className={item.calibrationOffset >= 0 ? 'text-emerald-300' : 'text-amber-300'}>
+                                   {signed(item.calibrationOffset)} offset
+                                 </span>
+                               </div>
+                             </div>
+                           ))}
+                         </div>
+                         {typeof drivers.similarSuccessRate === 'number' && (
+                           <div className="mt-2 border-t border-white/10 pt-2 text-[9px] font-black text-neutral-300">
+                             Historical success: {drivers.similarSuccessRate}%
+                           </div>
+                         )}
+                       </div>
+                       <div className="border-t border-white/10 pt-3">
+                         <div className="text-[8px] font-black uppercase tracking-widest text-neutral-500">
+                           What would lower confidence?
+                         </div>
+                         <ul className="mt-2 space-y-1 text-[9px] leading-relaxed text-neutral-500">
+                           <li>resource strain risk</li>
+                           <li>execution failure pattern</li>
+                           <li>black swan trigger</li>
+                         </ul>
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               ) : (
+                 <p className="text-[9px] leading-relaxed text-neutral-500">
+                   No historical confidence adjustment yet.
+                 </p>
+               )}
+             </div>
            </div>
         </div>
       </div>

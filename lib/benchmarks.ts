@@ -1,6 +1,7 @@
 import {
   DecisionContext,
   DecisionMemoryEntry,
+  ConfidenceEvidence,
   DomainBenchmark,
   CalibrationBucket,
   NetworkIntelligence,
@@ -71,6 +72,20 @@ function similarityScore(
   }
 
   return Math.min(1, score);
+}
+
+function evidenceFromEntries(entries: DecisionMemoryEntry[]): ConfidenceEvidence[] {
+  return entries
+    .filter(entry => entry.outcome)
+    .slice(0, 4)
+    .map(entry => ({
+      decisionId: entry.id,
+      problem: entry.problem,
+      predictedConfidence: entry.blueprint.score,
+      actualOutcome: entry.outcome!.actualOutcome,
+      actualConfidence: entry.outcome!.scoreAccuracy,
+      calibrationOffset: Math.round(entry.outcome!.scoreAccuracy - entry.blueprint.score),
+    }));
 }
 
 // ─── Domain Benchmarks ────────────────────────────────────────────────────────
@@ -382,6 +397,11 @@ export function calibrateScore(
       offset,
       sampleSize: similarEntries.length,
       confidence: similarEntries.length >= 5 ? 'high' : similarEntries.length >= 2 ? 'medium' : 'low',
+      similarSuccessRate: Math.round(
+        similarEntries.reduce((sum, item) => sum + item.entry.outcome!.scoreAccuracy, 0) /
+          similarEntries.length
+      ),
+      evidence: evidenceFromEntries(similarEntries.map(item => item.entry)),
     };
   }
 
@@ -404,6 +424,8 @@ export function calibrateScore(
     offset,
     sampleSize: entries.length,
     confidence: entries.length >= 5 ? 'high' : entries.length >= 3 ? 'medium' : 'low',
+    similarSuccessRate: Math.round(avgActual),
+    evidence: evidenceFromEntries(entries),
   };
 }
 

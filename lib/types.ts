@@ -97,6 +97,17 @@ export interface CalibrationResult {
   offset: number;
   sampleSize: number;
   confidence: 'high' | 'medium' | 'low' | 'none';
+  similarSuccessRate?: number;
+  evidence?: ConfidenceEvidence[];
+}
+
+export interface ConfidenceEvidence {
+  decisionId: string;
+  problem: string;
+  predictedConfidence: number;
+  actualOutcome: string;
+  actualConfidence: number;
+  calibrationOffset: number;
 }
 
 export interface ConversationTurn {
@@ -171,6 +182,15 @@ export interface DecisionBlueprint {
   council?: CouncilMetrics;
   riskMap?: { opportunity: number; risk: number };
   scenarioBranches?: ScenarioBranch[];
+  confidenceDrivers?: {
+    baseConfidence: number;
+    priorOutcomesAdjustment: number;
+    similarSuccessRate?: number;
+    riskPenalty: number;
+    finalConfidence: number;
+    sampleSize: number;
+    evidence?: ConfidenceEvidence[];
+  };
 }
 
 export interface ScenarioBranch {

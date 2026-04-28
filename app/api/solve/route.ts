@@ -65,15 +65,31 @@ export async function POST(req: Request) {
     // Calibrate the raw confidence score against historical outcomes
     // Re-read history after potential updates — but use the pre-run snapshot for calibration
     const calibration = calibrateScore(blueprint.score, history, domain, problem, body.context);
-    if (calibration.offset !== 0) {
-      blueprint.score = calibration.calibratedScore;
+    const riskPenalty =
+      calibration.offset !== 0 && blueprint.riskMap && blueprint.riskMap.risk > 60
+        ? -Math.min(8, Math.round((blueprint.riskMap.risk - 60) / 5))
+        : 0;
+    const finalConfidence = Math.round(
+      Math.min(100, Math.max(0, calibration.calibratedScore + riskPenalty))
+    );
+    if (calibration.offset !== 0 || riskPenalty !== 0) {
+      blueprint.score = finalConfidence;
       if (blueprint.riskMap) {
         blueprint.riskMap = {
           ...blueprint.riskMap,
-          opportunity: calibration.calibratedScore,
+          opportunity: finalConfidence,
         };
       }
     }
+    blueprint.confidenceDrivers = {
+      baseConfidence: calibration.rawScore,
+      priorOutcomesAdjustment: calibration.offset,
+      similarSuccessRate: calibration.similarSuccessRate,
+      riskPenalty,
+      finalConfidence: blueprint.score,
+      sampleSize: calibration.sampleSize,
+      evidence: calibration.evidence || [],
+    };
 
     // Persist to memory
     const saved = await saveDecision({ problem, blueprint, context: body.context });

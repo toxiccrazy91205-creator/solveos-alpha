@@ -1,5 +1,517 @@
 [
   {
+    "problem": "Should I launch SolveOS publicly to 10,000 users next quarter?",
+    "blueprint": {
+      "score": 84,
+      "isDemo": true,
+      "language": "English",
+      "recommendation": "Proceed with a measured, phased approach. The opportunity is real, but execution complexity requires careful management.",
+      "diagnosis": {
+        "coreProblem": "Strategic expansion into unproven territory.",
+        "blindSpots": "Overestimating internal velocity and underestimating competitive response.",
+        "keyRisks": "The Skeptic warns of high resource drain and potential brand dilution if the MVP fails to deliver premium value."
+      },
+      "paths": {
+        "safe": {
+          "description": "Maintain current trajectory while running low-cost experiments.",
+          "pros": [
+            "Zero capital risk",
+            "Team focus preserved"
+          ],
+          "cons": [
+            "Market opportunity loss",
+            "Stagnation"
+          ]
+        },
+        "balanced": {
+          "description": "The Operator's recommended path: Phased rollout over 12 weeks.",
+          "pros": [
+            "Controlled burn",
+            "Faster feedback"
+          ],
+          "cons": [
+            "Moderate resource strain"
+          ]
+        },
+        "bold": {
+          "description": "The Strategist's vision: Aggressive pivot to capture the market immediately.",
+          "pros": [
+            "First-mover advantage",
+            "High potential ROI"
+          ],
+          "cons": [
+            "Binary outcome risk",
+            "Maximum burn"
+          ]
+        }
+      },
+      "contrarianInsight": {
+        "perspective": "What if the market doesn't want an OS, but just a better single tool?",
+        "hiddenOpportunity": "Niche dominance in the 'Founder' segment before going broad.",
+        "uncomfortableTruth": "Your current team might not have the specific AI expertise for a full-scale engine."
+      },
+      "futureSimulation": {
+        "threeMonths": "Early feedback confirms core value, but UI complexity is a hurdle.",
+        "twelveMonths": "SolveOS becomes the standard for high-stakes decisions in mid-market firms."
+      },
+      "actionPlan": {
+        "today": "Lock down MVP spec by EOD and define success metrics.",
+        "thisWeek": "Set up core LangGraph nodes for Strategist and Skeptic agents.",
+        "thirtyDays": "Deploy initial alpha to 5 trusted testers for feedback."
+      },
+      "council": {
+        "strategistConfidence": 82,
+        "skepticAgreement": 28,
+        "operatorFeasibility": 71,
+        "consensusScore": 60,
+        "debateIntensity": 44,
+        "keyDisagreements": [
+          "Skeptic questions market timing assumptions"
+        ],
+        "resolutionPath": "Moderate agreement with manageable risks: Pilot with safeguards."
+      },
+      "riskMap": {
+        "opportunity": 84,
+        "risk": 36
+      },
+      "scenarioBranches": [
+        {
+          "id": "scenario-bull",
+          "name": "Bull Case (Best Execution)",
+          "probability": 31,
+          "upside": 500,
+          "downside": -50,
+          "timeline": "6-12 months",
+          "description": "Perfect execution: market embrace, zero churn, rapid adoption by founders"
+        },
+        {
+          "id": "scenario-base",
+          "name": "Base Case (Plan)",
+          "probability": 40,
+          "upside": 150,
+          "downside": -100,
+          "timeline": "3-6 months",
+          "description": "Normal execution with expected friction and gradual market discovery"
+        },
+        {
+          "id": "scenario-bear",
+          "name": "Bear Case (Stress Test)",
+          "probability": 22,
+          "upside": -200,
+          "downside": -800,
+          "timeline": "1-3 months",
+          "description": "Key features underperform, higher CAC than projected, founder churn begins"
+        },
+        {
+          "id": "scenario-tail",
+          "name": "Tail Risk (Black Swan)",
+          "probability": 7,
+          "upside": -1000,
+          "downside": -5000,
+          "timeline": "Immediate",
+          "description": "Regulatory challenge, major security incident, or founding team fracture"
+        }
+      ],
+      "confidenceDrivers": {
+        "baseConfidence": 78,
+        "priorOutcomesAdjustment": 6,
+        "similarSuccessRate": 84,
+        "riskPenalty": 0,
+        "finalConfidence": 84,
+        "sampleSize": 2
+      }
+    },
+    "id": "9t1b8pz",
+    "timestamp": "2026-04-28T12:14:40.166Z",
+    "tags": []
+  },
+  {
+    "problem": "Should I launch SolveOS to 100 beta users this quarter?",
+    "blueprint": {
+      "score": 85,
+      "isDemo": true,
+      "language": "English",
+      "recommendation": "Proceed with a measured, phased approach. The opportunity is real, but execution complexity requires careful management.",
+      "diagnosis": {
+        "coreProblem": "Strategic expansion into unproven territory.",
+        "blindSpots": "Overestimating internal velocity and underestimating competitive response.",
+        "keyRisks": "The Skeptic warns of high resource drain and potential brand dilution if the MVP fails to deliver premium value."
+      },
+      "paths": {
+        "safe": {
+          "description": "Maintain current trajectory while running low-cost experiments.",
+          "pros": [
+            "Zero capital risk",
+            "Team focus preserved"
+          ],
+          "cons": [
+            "Market opportunity loss",
+            "Stagnation"
+          ]
+        },
+        "balanced": {
+          "description": "The Operator's recommended path: Phased rollout over 12 weeks.",
+          "pros": [
+            "Controlled burn",
+            "Faster feedback"
+          ],
+          "cons": [
+            "Moderate resource strain"
+          ]
+        },
+        "bold": {
+          "description": "The Strategist's vision: Aggressive pivot to capture the market immediately.",
+          "pros": [
+            "First-mover advantage",
+            "High potential ROI"
+          ],
+          "cons": [
+            "Binary outcome risk",
+            "Maximum burn"
+          ]
+        }
+      },
+      "contrarianInsight": {
+        "perspective": "What if the market doesn't want an OS, but just a better single tool?",
+        "hiddenOpportunity": "Niche dominance in the 'Founder' segment before going broad.",
+        "uncomfortableTruth": "Your current team might not have the specific AI expertise for a full-scale engine."
+      },
+      "futureSimulation": {
+        "threeMonths": "Early feedback confirms core value, but UI complexity is a hurdle.",
+        "twelveMonths": "SolveOS becomes the standard for high-stakes decisions in mid-market firms."
+      },
+      "actionPlan": {
+        "today": "Lock down MVP spec by EOD and define success metrics.",
+        "thisWeek": "Set up core LangGraph nodes for Strategist and Skeptic agents.",
+        "thirtyDays": "Deploy initial alpha to 5 trusted testers for feedback."
+      },
+      "council": {
+        "strategistConfidence": 82,
+        "skepticAgreement": 28,
+        "operatorFeasibility": 71,
+        "consensusScore": 60,
+        "debateIntensity": 44,
+        "keyDisagreements": [
+          "Skeptic questions market timing assumptions"
+        ],
+        "resolutionPath": "Moderate agreement with manageable risks: Pilot with safeguards."
+      },
+      "riskMap": {
+        "opportunity": 85,
+        "risk": 36
+      },
+      "scenarioBranches": [
+        {
+          "id": "scenario-bull",
+          "name": "Bull Case (Best Execution)",
+          "probability": 31,
+          "upside": 500,
+          "downside": -50,
+          "timeline": "6-12 months",
+          "description": "Perfect execution: market embrace, zero churn, rapid adoption by founders"
+        },
+        {
+          "id": "scenario-base",
+          "name": "Base Case (Plan)",
+          "probability": 40,
+          "upside": 150,
+          "downside": -100,
+          "timeline": "3-6 months",
+          "description": "Normal execution with expected friction and gradual market discovery"
+        },
+        {
+          "id": "scenario-bear",
+          "name": "Bear Case (Stress Test)",
+          "probability": 22,
+          "upside": -200,
+          "downside": -800,
+          "timeline": "1-3 months",
+          "description": "Key features underperform, higher CAC than projected, founder churn begins"
+        },
+        {
+          "id": "scenario-tail",
+          "name": "Tail Risk (Black Swan)",
+          "probability": 7,
+          "upside": -1000,
+          "downside": -5000,
+          "timeline": "Immediate",
+          "description": "Regulatory challenge, major security incident, or founding team fracture"
+        }
+      ],
+      "confidenceDrivers": {
+        "baseConfidence": 82,
+        "priorOutcomesAdjustment": 3,
+        "similarSuccessRate": 84,
+        "riskPenalty": 0,
+        "finalConfidence": 85,
+        "sampleSize": 2
+      }
+    },
+    "id": "r9b1sd2",
+    "timestamp": "2026-04-28T12:07:14.052Z",
+    "tags": [],
+    "outcome": {
+      "decisionId": "r9b1sd2",
+      "actualOutcome": "succeeded",
+      "scoreAccuracy": 85,
+      "timestamp": "2026-04-28T12:07:39.325Z",
+      "lessons": [],
+      "recommendations": []
+    }
+  },
+  {
+    "problem": "Should I launch SolveOS publicly to 5000 users next month?",
+    "blueprint": {
+      "score": 82,
+      "isDemo": true,
+      "language": "English",
+      "recommendation": "Proceed with a measured, phased approach. The opportunity is real, but execution complexity requires careful management.",
+      "diagnosis": {
+        "coreProblem": "Strategic expansion into unproven territory.",
+        "blindSpots": "Overestimating internal velocity and underestimating competitive response.",
+        "keyRisks": "The Skeptic warns of high resource drain and potential brand dilution if the MVP fails to deliver premium value."
+      },
+      "paths": {
+        "safe": {
+          "description": "Maintain current trajectory while running low-cost experiments.",
+          "pros": [
+            "Zero capital risk",
+            "Team focus preserved"
+          ],
+          "cons": [
+            "Market opportunity loss",
+            "Stagnation"
+          ]
+        },
+        "balanced": {
+          "description": "The Operator's recommended path: Phased rollout over 12 weeks.",
+          "pros": [
+            "Controlled burn",
+            "Faster feedback"
+          ],
+          "cons": [
+            "Moderate resource strain"
+          ]
+        },
+        "bold": {
+          "description": "The Strategist's vision: Aggressive pivot to capture the market immediately.",
+          "pros": [
+            "First-mover advantage",
+            "High potential ROI"
+          ],
+          "cons": [
+            "Binary outcome risk",
+            "Maximum burn"
+          ]
+        }
+      },
+      "contrarianInsight": {
+        "perspective": "What if the market doesn't want an OS, but just a better single tool?",
+        "hiddenOpportunity": "Niche dominance in the 'Founder' segment before going broad.",
+        "uncomfortableTruth": "Your current team might not have the specific AI expertise for a full-scale engine."
+      },
+      "futureSimulation": {
+        "threeMonths": "Early feedback confirms core value, but UI complexity is a hurdle.",
+        "twelveMonths": "SolveOS becomes the standard for high-stakes decisions in mid-market firms."
+      },
+      "actionPlan": {
+        "today": "Lock down MVP spec by EOD and define success metrics.",
+        "thisWeek": "Set up core LangGraph nodes for Strategist and Skeptic agents.",
+        "thirtyDays": "Deploy initial alpha to 5 trusted testers for feedback."
+      },
+      "council": {
+        "strategistConfidence": 82,
+        "skepticAgreement": 28,
+        "operatorFeasibility": 71,
+        "consensusScore": 60,
+        "debateIntensity": 44,
+        "keyDisagreements": [
+          "Skeptic questions market timing assumptions"
+        ],
+        "resolutionPath": "Moderate agreement with manageable risks: Pilot with safeguards."
+      },
+      "riskMap": {
+        "opportunity": 82,
+        "risk": 36
+      },
+      "scenarioBranches": [
+        {
+          "id": "scenario-bull",
+          "name": "Bull Case (Best Execution)",
+          "probability": 31,
+          "upside": 500,
+          "downside": -50,
+          "timeline": "6-12 months",
+          "description": "Perfect execution: market embrace, zero churn, rapid adoption by founders"
+        },
+        {
+          "id": "scenario-base",
+          "name": "Base Case (Plan)",
+          "probability": 40,
+          "upside": 150,
+          "downside": -100,
+          "timeline": "3-6 months",
+          "description": "Normal execution with expected friction and gradual market discovery"
+        },
+        {
+          "id": "scenario-bear",
+          "name": "Bear Case (Stress Test)",
+          "probability": 22,
+          "upside": -200,
+          "downside": -800,
+          "timeline": "1-3 months",
+          "description": "Key features underperform, higher CAC than projected, founder churn begins"
+        },
+        {
+          "id": "scenario-tail",
+          "name": "Tail Risk (Black Swan)",
+          "probability": 7,
+          "upside": -1000,
+          "downside": -5000,
+          "timeline": "Immediate",
+          "description": "Regulatory challenge, major security incident, or founding team fracture"
+        }
+      ]
+    },
+    "id": "po0wxi9",
+    "timestamp": "2026-04-28T11:54:57.743Z",
+    "tags": [],
+    "outcome": {
+      "decisionId": "po0wxi9",
+      "actualOutcome": "succeeded",
+      "scoreAccuracy": 85,
+      "timestamp": "2026-04-28T11:55:25.935Z",
+      "lessons": [],
+      "recommendations": []
+    }
+  },
+  {
+    "problem": "Should I launch SolveOS to 100 beta users this quarter?",
+    "blueprint": {
+      "score": 82,
+      "isDemo": true,
+      "language": "English",
+      "recommendation": "Proceed with a measured, phased approach. The opportunity is real, but execution complexity requires careful management.",
+      "diagnosis": {
+        "coreProblem": "Strategic expansion into unproven territory.",
+        "blindSpots": "Overestimating internal velocity and underestimating competitive response.",
+        "keyRisks": "The Skeptic warns of high resource drain and potential brand dilution if the MVP fails to deliver premium value."
+      },
+      "paths": {
+        "safe": {
+          "description": "Maintain current trajectory while running low-cost experiments.",
+          "pros": [
+            "Zero capital risk",
+            "Team focus preserved"
+          ],
+          "cons": [
+            "Market opportunity loss",
+            "Stagnation"
+          ]
+        },
+        "balanced": {
+          "description": "The Operator's recommended path: Phased rollout over 12 weeks.",
+          "pros": [
+            "Controlled burn",
+            "Faster feedback"
+          ],
+          "cons": [
+            "Moderate resource strain"
+          ]
+        },
+        "bold": {
+          "description": "The Strategist's vision: Aggressive pivot to capture the market immediately.",
+          "pros": [
+            "First-mover advantage",
+            "High potential ROI"
+          ],
+          "cons": [
+            "Binary outcome risk",
+            "Maximum burn"
+          ]
+        }
+      },
+      "contrarianInsight": {
+        "perspective": "What if the market doesn't want an OS, but just a better single tool?",
+        "hiddenOpportunity": "Niche dominance in the 'Founder' segment before going broad.",
+        "uncomfortableTruth": "Your current team might not have the specific AI expertise for a full-scale engine."
+      },
+      "futureSimulation": {
+        "threeMonths": "Early feedback confirms core value, but UI complexity is a hurdle.",
+        "twelveMonths": "SolveOS becomes the standard for high-stakes decisions in mid-market firms."
+      },
+      "actionPlan": {
+        "today": "Lock down MVP spec by EOD and define success metrics.",
+        "thisWeek": "Set up core LangGraph nodes for Strategist and Skeptic agents.",
+        "thirtyDays": "Deploy initial alpha to 5 trusted testers for feedback."
+      },
+      "council": {
+        "strategistConfidence": 82,
+        "skepticAgreement": 28,
+        "operatorFeasibility": 71,
+        "consensusScore": 60,
+        "debateIntensity": 44,
+        "keyDisagreements": [
+          "Skeptic questions market timing assumptions"
+        ],
+        "resolutionPath": "Moderate agreement with manageable risks: Pilot with safeguards."
+      },
+      "riskMap": {
+        "opportunity": 82,
+        "risk": 36
+      },
+      "scenarioBranches": [
+        {
+          "id": "scenario-bull",
+          "name": "Bull Case (Best Execution)",
+          "probability": 31,
+          "upside": 500,
+          "downside": -50,
+          "timeline": "6-12 months",
+          "description": "Perfect execution: market embrace, zero churn, rapid adoption by founders"
+        },
+        {
+          "id": "scenario-base",
+          "name": "Base Case (Plan)",
+          "probability": 40,
+          "upside": 150,
+          "downside": -100,
+          "timeline": "3-6 months",
+          "description": "Normal execution with expected friction and gradual market discovery"
+        },
+        {
+          "id": "scenario-bear",
+          "name": "Bear Case (Stress Test)",
+          "probability": 22,
+          "upside": -200,
+          "downside": -800,
+          "timeline": "1-3 months",
+          "description": "Key features underperform, higher CAC than projected, founder churn begins"
+        },
+        {
+          "id": "scenario-tail",
+          "name": "Tail Risk (Black Swan)",
+          "probability": 7,
+          "upside": -1000,
+          "downside": -5000,
+          "timeline": "Immediate",
+          "description": "Regulatory challenge, major security incident, or founding team fracture"
+        }
+      ]
+    },
+    "id": "wq93m85",
+    "timestamp": "2026-04-28T11:46:49.763Z",
+    "tags": [],
+    "outcome": {
+      "decisionId": "wq93m85",
+      "actualOutcome": "succeeded",
+      "scoreAccuracy": 85,
+      "timestamp": "2026-04-28T11:47:32.129Z",
+      "lessons": [],
+      "recommendations": []
+    }
+  },
+  {
     "problem": "Should I launch SolveOS to 50 beta users this month?",
     "blueprint": {
       "score": 78,
