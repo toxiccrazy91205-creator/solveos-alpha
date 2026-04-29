@@ -5,6 +5,7 @@ WORKDIR /app
 # Disable telemetry and increase memory limit for the build process
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NEXT_PRIVATE_LOCAL_WEBPACK=true
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
