@@ -57,6 +57,13 @@ Teacher-facing specs are available in the `specs/` folder, with the main work pl
 
 Coming soon: SolveOS v1 demo.
 
+## v1-review-routing-fixed
+
+- Fixed review vs verdict routing
+- Added 30/60/90 milestone scorecards
+- Added review mode hard routing fallback
+- Regression prompts passing
+
 ## Status
 
 Alpha v1
