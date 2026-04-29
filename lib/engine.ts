@@ -41,12 +41,19 @@ function blueprintOutputText(value: unknown): string {
 let openaiClient: OpenAI | null = null;
 
 function getOpenAIClient(): OpenAI {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured.');
+    throw new Error('OPENROUTER_API_KEY is not configured.');
   }
 
-  openaiClient ??= new OpenAI({ apiKey });
+  openaiClient ??= new OpenAI({
+    apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+    defaultHeaders: {
+      'HTTP-Referer': 'https://solveos.alpha',
+      'X-Title': 'SolveOS Alpha',
+    },
+  });
   return openaiClient;
 }
 
@@ -199,7 +206,7 @@ async function detectionNode(state: AgentState): Promise<Partial<AgentState>> {
   }
 
   const response = await getOpenAIClient().chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
     messages: [{ 
       role: 'system', 
       content: 'Identify the language of the user input. Respond with ONLY the language name in English (e.g., "Russian", "English", "Spanish", "German").' 
@@ -219,7 +226,7 @@ async function strategistNode(state: AgentState): Promise<Partial<AgentState>> {
   const userPrompt = buildStrategistPrompt(state.problem || '', language, state.memoryContext || undefined);
   logPrompt(`strategist:${state.mode}`, `${systemPrompt}\n\n${userPrompt}`);
   const response = await getOpenAIClient().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
@@ -236,7 +243,7 @@ async function skepticNode(state: AgentState): Promise<Partial<AgentState>> {
   const userPrompt = buildSkepticPrompt(state.problem || '', state.strategistAnalysis || '', language);
   logPrompt(`skeptic:${state.mode}`, `${systemPrompt}\n\n${userPrompt}`);
   const response = await getOpenAIClient().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
@@ -253,7 +260,7 @@ async function operatorNode(state: AgentState): Promise<Partial<AgentState>> {
   const userPrompt = buildOperatorPrompt(state.problem || '', state.strategistAnalysis || '', state.skepticAnalysis || '', language);
   logPrompt(`operator:${state.mode}`, `${systemPrompt}\n\n${userPrompt}`);
   const response = await getOpenAIClient().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
@@ -292,7 +299,7 @@ async function synthesizerNode(state: AgentState): Promise<Partial<AgentState>> 
   const createBlueprint = async (prompt: string) => {
     logPrompt(`synthesizer:${state.mode}`, `${systemPrompt}\n\n${prompt}`);
     const response = await getOpenAIClient().chat.completions.create({
-      model: 'gpt-4o',
+      model: 'google/gemini-2.0-flash-lite-preview-02-05:free',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },

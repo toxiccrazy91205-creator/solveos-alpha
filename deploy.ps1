@@ -7,7 +7,7 @@ $EC2_IP = "REPLACE_WITH_YOUR_EC2_IP"
 $KEY_PATH = "C:\path\to\your-key.pem"
 $IMAGE_NAME = "solveos-app"
 $TAR_NAME = "solveos-app.tar"
-$OPENAI_API_KEY = "REPLACE_WITH_YOUR_OPENAI_KEY"
+$OPENROUTER_API_KEY = "REPLACE_WITH_YOUR_OPENROUTER_KEY"
 
 # 1. Build the Docker image locally
 Write-Host "--- Building Docker Image Locally ---" -ForegroundColor Cyan
@@ -32,7 +32,7 @@ ssh -i $KEY_PATH ${EC2_USER}@${EC2_IP} "
     sudo docker load -i /home/${EC2_USER}/$TAR_NAME &&
     sudo docker stop $IMAGE_NAME 2>/dev/null || true &&
     sudo docker rm $IMAGE_NAME 2>/dev/null || true &&
-    sudo docker run -d --name $IMAGE_NAME -p 80:3000 --restart always -e OPENAI_API_KEY=$OPENAI_API_KEY $IMAGE_NAME &&
+    sudo docker run -d --name $IMAGE_NAME -p 80:3000 --restart always -e OPENROUTER_API_KEY=$OPENROUTER_API_KEY $IMAGE_NAME &&
     rm /home/${EC2_USER}/$TAR_NAME
 "
 
