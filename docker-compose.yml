@@ -11,4 +11,5 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
     restart: always
